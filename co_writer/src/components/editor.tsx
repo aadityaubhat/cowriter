@@ -18,6 +18,8 @@ import {
     Focus,
     FileText,
     FileDown,
+    Quote,
+    Strikethrough,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { marked } from 'marked';
@@ -73,25 +75,6 @@ const MenuBar = ({ editor, isFocusMode, setIsFocusMode }: {
         return null;
     }
 
-    const toggleHeading = () => {
-        if (editor.isActive('heading', { level: 1 })) {
-            editor.chain().focus().toggleHeading({ level: 2 }).run();
-        } else if (editor.isActive('heading', { level: 2 })) {
-            editor.chain().focus().toggleHeading({ level: 3 }).run();
-        } else if (editor.isActive('heading', { level: 3 })) {
-            editor.chain().focus().setParagraph().run();
-        } else {
-            editor.chain().focus().toggleHeading({ level: 1 }).run();
-        }
-    };
-
-    const getCurrentHeadingIcon = () => {
-        if (editor.isActive('heading', { level: 1 })) return <Heading1 className="h-4 w-4" />;
-        if (editor.isActive('heading', { level: 2 })) return <Heading2 className="h-4 w-4" />;
-        if (editor.isActive('heading', { level: 3 })) return <Heading3 className="h-4 w-4" />;
-        return <Type className="h-4 w-4" />;
-    };
-
     const handleExportTxt = () => {
         const content = editor.getText();
         const blob = new Blob([content], { type: 'text/plain' });
@@ -121,6 +104,49 @@ const MenuBar = ({ editor, isFocusMode, setIsFocusMode }: {
                 <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => editor.chain().focus().setParagraph().run()}
+                    className={`hover:bg-primary hover:text-primary-foreground ${editor.isActive('paragraph') ? 'bg-primary text-primary-foreground' : ''}`}
+                >
+                    <Type className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                    className={`hover:bg-primary hover:text-primary-foreground ${editor.isActive('heading', { level: 1 }) ? 'bg-primary text-primary-foreground' : ''}`}
+                >
+                    <Heading1 className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                    className={`hover:bg-primary hover:text-primary-foreground ${editor.isActive('heading', { level: 2 }) ? 'bg-primary text-primary-foreground' : ''}`}
+                >
+                    <Heading2 className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                    className={`hover:bg-primary hover:text-primary-foreground ${editor.isActive('heading', { level: 3 }) ? 'bg-primary text-primary-foreground' : ''}`}
+                >
+                    <Heading3 className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                    className={`hover:bg-primary hover:text-primary-foreground ${editor.isActive('blockquote') ? 'bg-primary text-primary-foreground' : ''}`}
+                >
+                    <Quote className="h-4 w-4" />
+                </Button>
+
+                <div className="w-px h-6 bg-border mx-2" />
+
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     className={`hover:bg-primary hover:text-primary-foreground ${editor.isActive('bold') ? 'bg-primary text-primary-foreground' : ''}`}
                 >
@@ -142,15 +168,13 @@ const MenuBar = ({ editor, isFocusMode, setIsFocusMode }: {
                 >
                     <UnderlineIcon className="h-4 w-4" />
                 </Button>
-                <div className="w-px h-6 bg-border mx-2" />
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={toggleHeading}
-                    className={`hover:bg-primary hover:text-primary-foreground ${editor.isActive('heading') ? 'bg-primary text-primary-foreground' : ''
-                        }`}
+                    onClick={() => editor.chain().focus().toggleStrike().run()}
+                    className={`hover:bg-primary hover:text-primary-foreground ${editor.isActive('strike') ? 'bg-primary text-primary-foreground' : ''}`}
                 >
-                    {getCurrentHeadingIcon()}
+                    <Strikethrough className="h-4 w-4" />
                 </Button>
             </div>
 
@@ -198,6 +222,11 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
     const [wordCount, setWordCount] = useState(0);
     const [isFocusMode, setIsFocusMode] = useState(false);
 
+    const updateWordCount = (text: string) => {
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+        setWordCount(words.length);
+    };
+
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -210,16 +239,15 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
             CustomFontSize,
             Highlight,
         ],
-        content: content,
+        content: '',
         onUpdate: ({ editor }) => {
             const text = editor.getText();
-            const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-            setWordCount(words.length);
-            onUpdate(editor.getText());
+            updateWordCount(text);
+            onUpdate(text);
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-base max-w-none focus:outline-none h-full w-full overflow-y-auto px-4 py-2',
+                class: 'prose prose-base max-w-none focus:outline-none w-full h-full overflow-y-auto px-4 py-2',
             },
         },
     });
@@ -230,18 +258,22 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
             // Parse markdown to HTML
             const html = marked(content);
             editor.commands.setContent(html);
+            // Update word count after content is set
+            updateWordCount(content);
         }
     }, [content, editor]);
 
     return (
-        <div className={`flex flex-col h-full w-full overflow-hidden transition-all duration-300 ${isFocusMode ? 'fixed inset-0 bg-background/95 backdrop-blur-sm z-50' : ''}`}>
+        <div className={`flex flex-col h-full w-full ${isFocusMode ? 'fixed inset-0 bg-background/95 backdrop-blur-sm z-50' : ''}`}>
             <MenuBar
                 editor={editor}
                 isFocusMode={isFocusMode}
                 setIsFocusMode={setIsFocusMode}
             />
-            <div className={`flex-1 flex flex-col min-h-0 relative ${isFocusMode ? 'container mx-auto max-w-3xl' : ''}`}>
-                <EditorContent editor={editor} className="flex-1 overflow-auto" />
+            <div className={`flex-1 min-h-0 relative flex flex-col ${isFocusMode ? 'container mx-auto max-w-3xl' : ''}`}>
+                <div className="flex-1 overflow-auto">
+                    <EditorContent editor={editor} className="h-full" />
+                </div>
                 {isLoading && (
                     <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center">
                         <div className="flex flex-col items-center gap-2">

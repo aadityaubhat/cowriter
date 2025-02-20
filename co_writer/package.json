@@ -16,6 +16,7 @@
     "@radix-ui/react-select": "^2.1.6",
     "@radix-ui/react-slot": "^1.1.2",
     "@tailwindcss/typography": "^0.5.16",
+    "@tippyjs/react": "^4.2.6",
     "@tiptap/extension-font-family": "^2.11.5",
     "@tiptap/extension-highlight": "^2.11.5",
     "@tiptap/extension-text-style": "^2.11.5",

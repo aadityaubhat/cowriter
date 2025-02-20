@@ -492,9 +492,9 @@ export default function Home() {
 
       {/* Main Content */}
       {activeTab === 'write' && (
-        <main className="flex-1 flex min-h-[calc(100vh-3.5rem)]">
-          <div className="flex-1 p-4 flex">
-            <div className="flex gap-6 flex-1">
+        <main className="flex-1 flex min-h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)] overflow-hidden">
+          <div className="flex-1 p-4 flex overflow-hidden">
+            <div className="flex gap-6 flex-1 overflow-hidden">
               {/* Left side - Rich Text Editor */}
               <Card className="flex-1 flex flex-col overflow-hidden">
                 <Editor
@@ -505,9 +505,9 @@ export default function Home() {
               </Card>
 
               {/* Right side - Action buttons and Chat */}
-              <div className="w-80 flex flex-col gap-4">
+              <div className="w-80 flex flex-col gap-4 relative min-h-0">
                 {/* Collapsible Buttons */}
-                <Card className="shadow-lg overflow-hidden">
+                <Card className={`shadow-lg overflow-hidden ${!llmConfig.type ? 'opacity-50 pointer-events-none' : ''}`}>
                   <Button
                     variant="ghost"
                     className="w-full flex items-center justify-between p-4"
@@ -521,7 +521,7 @@ export default function Home() {
                     )}
                   </Button>
                   <div
-                    className={`transition-all duration-200 ease-in-out ${isCollapsed ? "h-0" : "h-auto"}`}
+                    className={`transition-all duration-200 ease-in-out ${isCollapsed ? "h-0" : "max-h-[300px] overflow-y-auto"}`}
                   >
                     <div className="p-2 space-y-2">
                       {renderActionButtons()}
@@ -530,31 +530,30 @@ export default function Home() {
                 </Card>
 
                 {/* Chat */}
-                <Card className="shadow-lg flex-1">
-                  <div className="p-4 flex flex-col h-full">
-                    <h3 className="text-lg font-semibold mb-4 text-foreground">Chat</h3>
-                    <div className={`flex flex-col flex-1 ${isCollapsed ? 'h-[calc(100vh-16rem)]' : 'h-[400px]'} transition-all duration-200`}>
-                      <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-                        {messages.map((message, index) => (
+                <Card className={`shadow-lg flex-1 overflow-hidden min-h-0 ${!llmConfig.type ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <div className="flex flex-col h-full">
+                    <h3 className="text-lg font-semibold p-4 pb-2">Chat</h3>
+                    <div className="flex-1 overflow-y-auto px-4 space-y-4 min-h-0">
+                      {messages.map((message, index) => (
+                        <div
+                          key={index}
+                          className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
+                        >
                           <div
-                            key={index}
-                            className={`flex ${message.isUser ? "justify-end" : "justify-start"
+                            className={`max-w-[80%] rounded-lg p-3 ${message.isUser
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
                               }`}
                           >
-                            <div
-                              className={`max-w-[80%] rounded-lg p-3 ${message.isUser
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                                }`}
-                            >
-                              <p className="text-sm">{message.text}</p>
-                              <p className="text-xs opacity-70 mt-1">
-                                {message.timestamp.toLocaleTimeString()}
-                              </p>
-                            </div>
+                            <p className="text-sm">{message.text}</p>
+                            <p className="text-xs opacity-70 mt-1">
+                              {message.timestamp.toLocaleTimeString()}
+                            </p>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="p-4 pt-2 border-t">
                       <div className="flex gap-2">
                         <Input
                           placeholder="Type a message..."
@@ -577,6 +576,17 @@ export default function Home() {
                     </div>
                   </div>
                 </Card>
+
+                {/* LLM Connection Overlay */}
+                {!llmConfig.type && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-lg">
+                    <Card className="p-6 text-center shadow-lg">
+                      <h3 className="text-lg font-semibold mb-2">No LLM Connected</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Connect to an LLM to use actions and chat</p>
+                      <LLMConnectionModal />
+                    </Card>
+                  </div>
+                )}
               </div>
             </div>
           </div>
