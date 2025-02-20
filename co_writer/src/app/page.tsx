@@ -35,6 +35,21 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Tab = 'write' | 'configure';
 
@@ -49,6 +64,13 @@ interface ActionButton {
   name: string;
   action: string;
   emoji: string;
+}
+
+interface LLMConfig {
+  type: 'openai' | 'llama' | null;
+  apiKey?: string;
+  host?: string;
+  port?: string;
 }
 
 const defaultActions: ActionButton[] = [
@@ -170,6 +192,13 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('write');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [actions, setActions] = useState<ActionButton[]>(defaultActions);
+  const [llmConfig, setLLMConfig] = useState<LLMConfig>({ type: null });
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [aboutMe, setAboutMe] = useState('');
+  const [preferredStyle, setPreferredStyle] = useState('Professional');
+  const [tone, setTone] = useState('Formal');
+  const [editorContent, setEditorContent] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       text: "Hello! I'm Co Writer. How can I help you today?",
@@ -233,6 +262,50 @@ export default function Home() {
     setInputMessage("");
   };
 
+  const handleActionClick = async (action: ActionButton) => {
+    if (!llmConfig.type) {
+      alert('Please connect to an LLM first');
+      return;
+    }
+
+    if (!editorContent.trim()) {
+      alert('Please enter some text in the editor first');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/submit_action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: action.name.toLowerCase(),
+          action_description: action.action,
+          text: editorContent,
+          about_me: aboutMe,
+          preferred_style: preferredStyle,
+          tone: tone,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to process action');
+      }
+
+      setEditorContent(data.text);
+    } catch (error) {
+      console.error('Action processing failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process action. Please try again.';
+      alert(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Update the buttons in the Write tab to use configured actions
   const renderActionButtons = () => {
     return actions.map((action) => (
@@ -240,11 +313,153 @@ export default function Home() {
         key={action.id}
         variant="default"
         className="w-full h-10 text-base font-medium bg-blue-500 hover:bg-blue-600"
+        onClick={() => handleActionClick(action)}
+        disabled={isProcessing || !llmConfig.type}
       >
         <span className="text-xl mr-2">{action.emoji}</span>
         {action.name}
       </Button>
     ));
+  };
+
+  const handleLLMConnect = async (config: LLMConfig) => {
+    setIsConnecting(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/connect_llm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: config.type,
+          ...(config.type === 'openai' ? { api_key: config.apiKey } : { host: config.host, port: config.port }),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setLLMConfig(config);
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      console.error('Failed to connect:', error);
+      alert(error instanceof Error ? error.message : 'Failed to connect to LLM');
+      setLLMConfig({ type: null });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const LLMConnectionModal = () => {
+    const [selectedLLM, setSelectedLLM] = useState<'openai' | 'llama'>('openai');
+    const [apiKey, setApiKey] = useState('');
+    const [host, setHost] = useState('http://localhost');
+    const [port, setPort] = useState('8080');
+    const [error, setError] = useState<string | null>(null);
+
+    const handleConnect = () => {
+      setError(null);
+      if (selectedLLM === 'openai' && !apiKey.trim()) {
+        setError('API key is required');
+        return;
+      }
+      if (selectedLLM === 'llama' && (!host.trim() || !port.trim())) {
+        setError('Host and port are required');
+        return;
+      }
+
+      const config: LLMConfig = {
+        type: selectedLLM,
+        ...(selectedLLM === 'openai' ? { apiKey } : { host, port }),
+      };
+      handleLLMConnect(config);
+    };
+
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" disabled={isConnecting}>
+            {isConnecting ? "Connecting..." : llmConfig.type ? "Update Connection" : "Connect Now"}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Connect to LLM</DialogTitle>
+            <DialogDescription>
+              Choose your LLM provider and enter the required credentials.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">LLM Provider</label>
+              <Select
+                value={selectedLLM}
+                onValueChange={(value: 'openai' | 'llama') => {
+                  setSelectedLLM(value);
+                  setError(null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select LLM provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openai">OpenAI</SelectItem>
+                  <SelectItem value="llama">Llama.cpp</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedLLM === 'openai' ? (
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">API Key</label>
+                <Input
+                  type="password"
+                  placeholder="Enter your OpenAI API key"
+                  value={apiKey}
+                  onChange={(e) => {
+                    setApiKey(e.target.value);
+                    setError(null);
+                  }}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Host</label>
+                  <Input
+                    placeholder="Enter host"
+                    value={host}
+                    onChange={(e) => {
+                      setHost(e.target.value);
+                      setError(null);
+                    }}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Port</label>
+                  <Input
+                    placeholder="Enter port"
+                    value={port}
+                    onChange={(e) => {
+                      setPort(e.target.value);
+                      setError(null);
+                    }}
+                  />
+                </div>
+              </>
+            )}
+            {error && (
+              <p className="text-sm text-red-500">{error}</p>
+            )}
+            <Button onClick={handleConnect} disabled={isConnecting}>
+              {isConnecting ? "Connecting..." : "Connect"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   return (
@@ -282,7 +497,11 @@ export default function Home() {
             <div className="flex gap-6 flex-1">
               {/* Left side - Rich Text Editor */}
               <Card className="flex-1 flex flex-col overflow-hidden">
-                <Editor />
+                <Editor
+                  content={editorContent}
+                  onUpdate={(content) => setEditorContent(content)}
+                  isLoading={isProcessing}
+                />
               </Card>
 
               {/* Right side - Action buttons and Chat */}
@@ -366,6 +585,25 @@ export default function Home() {
       {activeTab === 'configure' && (
         <main className="flex-1 p-4">
           <div className="max-w-7xl mx-auto">
+            {/* LLM Connection Section */}
+            <Card className="mb-8 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-2xl font-semibold">Connection to LLM:</h2>
+                  <span className={`text-lg ${llmConfig.type ? 'text-green-500' : 'text-red-500'}`}>
+                    {llmConfig.type ? 'Connected' : 'Not connected'}
+                  </span>
+                </div>
+                <LLMConnectionModal />
+              </div>
+              {llmConfig.type && (
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Connected to: {llmConfig.type === 'openai' ? 'OpenAI' : 'Llama.cpp'}
+                  {llmConfig.type === 'llama' && ` (${llmConfig.host}:${llmConfig.port})`}
+                </div>
+              )}
+            </Card>
+
             <div className="flex gap-8">
               {/* Left Column */}
               <div className="flex-1 space-y-8">
@@ -376,6 +614,8 @@ export default function Home() {
                     <Textarea
                       placeholder="Share your background, expertise, and interests. This helps me understand your perspective and tailor the writing to match your voice and experience."
                       className="min-h-[200px]"
+                      value={aboutMe}
+                      onChange={(e) => setAboutMe(e.target.value)}
                     />
                   </div>
                 </Card>
@@ -386,7 +626,11 @@ export default function Home() {
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium mb-1 block">Preferred Style</label>
-                      <select className="w-full rounded-md border border-input bg-background px-3 h-10">
+                      <select
+                        className="w-full rounded-md border border-input bg-background px-3 h-10"
+                        value={preferredStyle}
+                        onChange={(e) => setPreferredStyle(e.target.value)}
+                      >
                         <option>Professional</option>
                         <option>Casual</option>
                         <option>Academic</option>
@@ -395,7 +639,11 @@ export default function Home() {
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-1 block">Tone</label>
-                      <select className="w-full rounded-md border border-input bg-background px-3 h-10">
+                      <select
+                        className="w-full rounded-md border border-input bg-background px-3 h-10"
+                        value={tone}
+                        onChange={(e) => setTone(e.target.value)}
+                      >
                         <option>Formal</option>
                         <option>Informal</option>
                         <option>Friendly</option>

@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "co-writer-backend"
+version = "0.1.0"
+description = "Backend for CoWriter application"
+authors = ["Aaditya Bhat"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.115.8"
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
+pydantic = "^2.10.6"
+openai = "^1.63.2"
+requests = "^2.32.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

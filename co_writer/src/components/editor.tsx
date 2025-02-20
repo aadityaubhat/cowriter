@@ -4,19 +4,23 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextStyle from '@tiptap/extension-text-style';
+import Highlight from '@tiptap/extension-highlight';
 import { Mark, mergeAttributes } from '@tiptap/core';
 import { Button } from './ui/button';
 import {
     Bold,
     Italic,
     Underline as UnderlineIcon,
-    Minus,
-    Plus,
+    Type,
+    Heading1,
+    Heading2,
+    Heading3,
     Focus,
     FileText,
     FileDown,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { marked } from 'marked';
 
 const CustomFontSize = Mark.create({
     name: 'fontSize',
@@ -69,42 +73,23 @@ const MenuBar = ({ editor, isFocusMode, setIsFocusMode }: {
         return null;
     }
 
-    const sizes = {
-        small: '0.875',    // 14px
-        normal: '1',      // 16px
-        large: '1.125'    // 18px
-    };
-
-    const sizeOrder = ['small', 'normal', 'large'] as const;
-
-    const getCurrentSizeIndex = () => {
-        if (editor.isActive('fontSize', { size: sizes.small })) return 0;
-        if (editor.isActive('fontSize', { size: sizes.large })) return 2;
-        return 1; // normal
-    };
-
-    const decreaseSize = () => {
-        const currentIndex = getCurrentSizeIndex();
-        const newIndex = Math.max(0, currentIndex - 1);
-        const newSize = sizeOrder[newIndex];
-
-        if (newSize === 'normal') {
-            editor.chain().focus().unsetMark('fontSize').run();
+    const toggleHeading = () => {
+        if (editor.isActive('heading', { level: 1 })) {
+            editor.chain().focus().toggleHeading({ level: 2 }).run();
+        } else if (editor.isActive('heading', { level: 2 })) {
+            editor.chain().focus().toggleHeading({ level: 3 }).run();
+        } else if (editor.isActive('heading', { level: 3 })) {
+            editor.chain().focus().setParagraph().run();
         } else {
-            editor.chain().focus().setMark('fontSize', { size: sizes[newSize] }).run();
+            editor.chain().focus().toggleHeading({ level: 1 }).run();
         }
     };
 
-    const increaseSize = () => {
-        const currentIndex = getCurrentSizeIndex();
-        const newIndex = Math.min(2, currentIndex + 1);
-        const newSize = sizeOrder[newIndex];
-
-        if (newSize === 'normal') {
-            editor.chain().focus().unsetMark('fontSize').run();
-        } else {
-            editor.chain().focus().setMark('fontSize', { size: sizes[newSize] }).run();
-        }
+    const getCurrentHeadingIcon = () => {
+        if (editor.isActive('heading', { level: 1 })) return <Heading1 className="h-4 w-4" />;
+        if (editor.isActive('heading', { level: 2 })) return <Heading2 className="h-4 w-4" />;
+        if (editor.isActive('heading', { level: 3 })) return <Heading3 className="h-4 w-4" />;
+        return <Type className="h-4 w-4" />;
     };
 
     const handleExportTxt = () => {
@@ -161,20 +146,11 @@ const MenuBar = ({ editor, isFocusMode, setIsFocusMode }: {
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={decreaseSize}
-                    disabled={getCurrentSizeIndex() === 0}
-                    className="hover:bg-primary hover:text-primary-foreground"
+                    onClick={toggleHeading}
+                    className={`hover:bg-primary hover:text-primary-foreground ${editor.isActive('heading') ? 'bg-primary text-primary-foreground' : ''
+                        }`}
                 >
-                    <Minus className="h-4 w-4" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={increaseSize}
-                    disabled={getCurrentSizeIndex() === 2}
-                    className="hover:bg-primary hover:text-primary-foreground"
-                >
-                    <Plus className="h-4 w-4" />
+                    {getCurrentHeadingIcon()}
                 </Button>
             </div>
 
@@ -212,44 +188,68 @@ const MenuBar = ({ editor, isFocusMode, setIsFocusMode }: {
     );
 };
 
-export function Editor() {
+interface EditorProps {
+    content: string;
+    onUpdate: (content: string) => void;
+    isLoading?: boolean;
+}
+
+export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
     const [wordCount, setWordCount] = useState(0);
     const [isFocusMode, setIsFocusMode] = useState(false);
 
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
-                heading: false,
-                codeBlock: false,
+                heading: {
+                    levels: [1, 2, 3]
+                },
             }),
             Underline,
             TextStyle,
             CustomFontSize,
+            Highlight,
         ],
-        content: '',
+        content: content,
         onUpdate: ({ editor }) => {
             const text = editor.getText();
             const words = text.trim().split(/\s+/).filter(word => word.length > 0);
             setWordCount(words.length);
+            onUpdate(editor.getText());
         },
         editorProps: {
             attributes: {
-                class: 'prose max-w-none focus:outline-none h-full w-full overflow-y-auto px-4 py-2',
+                class: 'prose prose-base max-w-none focus:outline-none h-full w-full overflow-y-auto px-4 py-2',
             },
         },
     });
 
+    // Update editor content when prop changes, parse markdown if content changes
+    useEffect(() => {
+        if (editor && content !== editor.getText()) {
+            // Parse markdown to HTML
+            const html = marked(content);
+            editor.commands.setContent(html);
+        }
+    }, [content, editor]);
+
     return (
         <div className={`flex flex-col h-full w-full overflow-hidden transition-all duration-300 ${isFocusMode ? 'fixed inset-0 bg-background/95 backdrop-blur-sm z-50' : ''}`}>
-            <div className={`flex items-center justify-between border-b ${isFocusMode ? 'px-4' : ''}`}>
-                <MenuBar
-                    editor={editor}
-                    isFocusMode={isFocusMode}
-                    setIsFocusMode={setIsFocusMode}
-                />
-            </div>
-            <div className={`flex-1 flex flex-col min-h-0 ${isFocusMode ? 'container mx-auto max-w-3xl' : ''}`}>
+            <MenuBar
+                editor={editor}
+                isFocusMode={isFocusMode}
+                setIsFocusMode={setIsFocusMode}
+            />
+            <div className={`flex-1 flex flex-col min-h-0 relative ${isFocusMode ? 'container mx-auto max-w-3xl' : ''}`}>
                 <EditorContent editor={editor} className="flex-1 overflow-auto" />
+                {isLoading && (
+                    <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm text-muted-foreground animate-pulse">Processing...</p>
+                        </div>
+                    </div>
+                )}
                 <div className="p-2 text-sm text-muted-foreground text-right border-t">
                     {wordCount} {wordCount === 1 ? 'word' : 'words'}
                 </div>
