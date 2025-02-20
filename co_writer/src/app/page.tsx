@@ -50,6 +50,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Panel,
+  PanelGroup,
+  PanelResizeHandle,
+} from "react-resizable-panels";
 
 type Tab = 'write' | 'configure';
 
@@ -207,6 +212,8 @@ export default function Home() {
     },
   ]);
   const [inputMessage, setInputMessage] = useState("");
+  const [isChatProcessing, setIsChatProcessing] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -214,6 +221,13 @@ export default function Home() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Scroll to bottom of chat when new messages arrive
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   // Action button handlers
   const handleAddAction = () => {
@@ -252,14 +266,52 @@ export default function Home() {
     }
   };
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !llmConfig.type || isChatProcessing) return;
 
-    setMessages((prev) => [
-      ...prev,
-      { text: inputMessage, isUser: true, timestamp: new Date() },
-    ]);
+    const userMessage = {
+      text: inputMessage,
+      isUser: true,
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
+    setIsChatProcessing(true);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: inputMessage,
+          context: editorContent ? `Current editor content: ${editorContent}` : undefined
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      const data = await response.json();
+
+      setMessages(prev => [...prev, {
+        text: data.text,
+        isUser: false,
+        timestamp: new Date(),
+      }]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, {
+        text: "I'm sorry, I encountered an error. Please try again.",
+        isUser: false,
+        timestamp: new Date(),
+      }]);
+    } finally {
+      setIsChatProcessing(false);
+    }
   };
 
   const handleActionClick = async (action: ActionButton) => {
@@ -494,101 +546,121 @@ export default function Home() {
       {activeTab === 'write' && (
         <main className="flex-1 flex min-h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)] overflow-hidden">
           <div className="flex-1 p-4 flex overflow-hidden">
-            <div className="flex gap-6 flex-1 overflow-hidden">
+            <PanelGroup direction="horizontal" className="flex gap-2 flex-1 overflow-hidden">
               {/* Left side - Rich Text Editor */}
-              <Card className="flex-1 flex flex-col overflow-hidden">
-                <Editor
-                  content={editorContent}
-                  onUpdate={(content) => setEditorContent(content)}
-                  isLoading={isProcessing}
-                />
-              </Card>
+              <Panel defaultSize={70} minSize={30}>
+                <Card className="flex-1 flex flex-col overflow-hidden h-full">
+                  <Editor
+                    content={editorContent}
+                    onUpdate={(content) => setEditorContent(content)}
+                    isLoading={isProcessing}
+                  />
+                </Card>
+              </Panel>
+
+              <PanelResizeHandle className="w-2 hover:bg-muted transition-colors rounded-sm" />
 
               {/* Right side - Action buttons and Chat */}
-              <div className="w-80 flex flex-col gap-4 relative min-h-0">
-                {/* Collapsible Buttons */}
-                <Card className={`shadow-lg overflow-hidden ${!llmConfig.type ? 'opacity-50 pointer-events-none' : ''}`}>
-                  <Button
-                    variant="ghost"
-                    className="w-full flex items-center justify-between p-4"
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                  >
-                    <span className="font-semibold">Actions</span>
-                    {isCollapsed ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronUp className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <div
-                    className={`transition-all duration-200 ease-in-out ${isCollapsed ? "h-0" : "max-h-[300px] overflow-y-auto"}`}
-                  >
-                    <div className="p-2 space-y-2">
-                      {renderActionButtons()}
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Chat */}
-                <Card className={`shadow-lg flex-1 overflow-hidden min-h-0 ${!llmConfig.type ? 'opacity-50 pointer-events-none' : ''}`}>
-                  <div className="flex flex-col h-full">
-                    <h3 className="text-lg font-semibold p-4 pb-2">Chat</h3>
-                    <div className="flex-1 overflow-y-auto px-4 space-y-4 min-h-0">
-                      {messages.map((message, index) => (
-                        <div
-                          key={index}
-                          className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`max-w-[80%] rounded-lg p-3 ${message.isUser
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
-                              }`}
-                          >
-                            <p className="text-sm">{message.text}</p>
-                            <p className="text-xs opacity-70 mt-1">
-                              {message.timestamp.toLocaleTimeString()}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-4 pt-2 border-t">
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Type a message..."
-                          value={inputMessage}
-                          onChange={(e) => setInputMessage(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleSendMessage();
-                            }
-                          }}
-                        />
-                        <Button
-                          size="icon"
-                          onClick={handleSendMessage}
-                          disabled={!inputMessage.trim()}
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
+              <Panel defaultSize={30} minSize={20}>
+                <div className="flex flex-col gap-4 relative min-h-0 h-full">
+                  {/* Collapsible Buttons */}
+                  <Card className={`shadow-lg overflow-hidden ${!llmConfig.type ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <Button
+                      variant="ghost"
+                      className="w-full flex items-center justify-between p-4"
+                      onClick={() => setIsCollapsed(!isCollapsed)}
+                    >
+                      <span className="font-semibold">Actions</span>
+                      {isCollapsed ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronUp className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <div
+                      className={`transition-all duration-200 ease-in-out ${isCollapsed ? "h-0" : "max-h-[300px] overflow-y-auto"}`}
+                    >
+                      <div className="p-2 space-y-2">
+                        {renderActionButtons()}
                       </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
 
-                {/* LLM Connection Overlay */}
-                {!llmConfig.type && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-lg">
-                    <Card className="p-6 text-center shadow-lg">
-                      <h3 className="text-lg font-semibold mb-2">No LLM Connected</h3>
-                      <p className="text-sm text-muted-foreground mb-4">Connect to an LLM to use actions and chat</p>
-                      <LLMConnectionModal />
-                    </Card>
-                  </div>
-                )}
-              </div>
-            </div>
+                  {/* Chat */}
+                  <Card className={`shadow-lg flex-1 overflow-hidden min-h-0 ${!llmConfig.type ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className="flex flex-col h-full">
+                      <h3 className="text-lg font-semibold p-4 pb-2">Chat</h3>
+                      <div
+                        ref={chatContainerRef}
+                        className="flex-1 overflow-y-auto px-4 space-y-4 min-h-0"
+                      >
+                        {messages.map((message, index) => (
+                          <div
+                            key={index}
+                            className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
+                          >
+                            <div
+                              className={`max-w-[80%] rounded-lg p-3 ${message.isUser
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                                }`}
+                            >
+                              <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                              <p className="text-xs opacity-70 mt-1">
+                                {message.timestamp.toLocaleTimeString()}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        {isChatProcessing && (
+                          <div className="flex justify-start">
+                            <div className="bg-muted rounded-lg p-3 flex items-center gap-2">
+                              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4 pt-2 border-t">
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Type a message..."
+                            value={inputMessage}
+                            onChange={(e) => setInputMessage(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage();
+                              }
+                            }}
+                            disabled={isChatProcessing || !llmConfig.type}
+                          />
+                          <Button
+                            size="icon"
+                            onClick={handleSendMessage}
+                            disabled={!inputMessage.trim() || isChatProcessing || !llmConfig.type}
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* LLM Connection Overlay */}
+                  {!llmConfig.type && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-lg">
+                      <Card className="p-6 text-center shadow-lg">
+                        <h3 className="text-lg font-semibold mb-2">No LLM Connected</h3>
+                        <p className="text-sm text-muted-foreground mb-4">Connect to an LLM to use actions and chat</p>
+                        <LLMConnectionModal />
+                      </Card>
+                    </div>
+                  )}
+                </div>
+              </Panel>
+            </PanelGroup>
           </div>
         </main>
       )}

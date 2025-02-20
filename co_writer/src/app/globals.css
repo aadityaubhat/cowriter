@@ -72,3 +72,24 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+[data-panel-resize-handle-active] {
+  background-color: hsl(var(--primary));
+  transition: background-color 0.2s ease;
+}
+
+[data-panel-resize-handle]:hover {
+  background-color: hsl(var(--muted));
+}
+
+[data-panel-group] {
+  display: flex;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+[data-panel] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
