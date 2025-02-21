@@ -2,7 +2,7 @@
 name = "co-writer-backend"
 version = "0.1.0"
 description = "Backend for CoWriter application"
-authors = ["Aaditya Bhat"]
+authors = ["CoWriter Team <github@cowriter.ai>"]
 readme = "README.md"
 packages = [{include = "app"}]
 

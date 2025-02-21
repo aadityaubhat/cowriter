@@ -6,13 +6,17 @@ import openai
 import requests
 from enum import Enum
 from fastapi.responses import JSONResponse
+import os
 
 app = FastAPI(title="CoWriter Backend")
+
+# Get allowed origins from environment or default to localhost
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=ALLOWED_ORIGINS,  # Configurable origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
