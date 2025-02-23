@@ -1,23 +1,13 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Editor } from "@/components/editor";
-import { useState, useEffect, useRef } from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  Send,
-  Wand2,
-  Minimize2,
-  MessageSquare,
-  GripVertical,
-  X,
-  Smile,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Editor } from '@/components/editor';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronDown, ChevronUp, Send, GripVertical, X, Smile } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Textarea } from '@/components/ui/textarea';
 import {
   DndContext,
   closestCenter,
@@ -42,19 +32,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  Panel,
-  PanelGroup,
-  PanelResizeHandle,
-} from "react-resizable-panels";
+} from '@/components/ui/select';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import type { DragEndEvent as DndDragEndEvent } from '@dnd-kit/core';
 
 type Tab = 'write' | 'configure';
 
@@ -95,13 +82,9 @@ function SortableActionItem({ action, onUpdate, onDelete }: SortableActionItemPr
   const pickerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id: action.id });
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: action.id,
+  });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -144,13 +127,13 @@ function SortableActionItem({ action, onUpdate, onDelete }: SortableActionItemPr
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 bg-card p-4 rounded-lg border mb-2"
+      className="mb-2 flex items-center gap-2 rounded-lg border bg-card p-4"
     >
       <div {...attributes} {...listeners}>
         <GripVertical className="h-5 w-5 cursor-grab text-muted-foreground" />
       </div>
       <div className="flex-1">
-        <div className="flex gap-2 mb-2">
+        <div className="mb-2 flex gap-2">
           <div className="relative">
             <Button
               ref={buttonRef}
@@ -162,7 +145,7 @@ function SortableActionItem({ action, onUpdate, onDelete }: SortableActionItemPr
               {action.emoji || <Smile className="h-4 w-4" />}
             </Button>
             {showEmojiPicker && (
-              <div ref={pickerRef} className="absolute top-full left-0 mt-1 z-50">
+              <div ref={pickerRef} className="absolute left-0 top-full z-50 mt-1">
                 <EmojiPicker onEmojiClick={handleEmojiClick} />
               </div>
             )}
@@ -171,14 +154,14 @@ function SortableActionItem({ action, onUpdate, onDelete }: SortableActionItemPr
             value={action.name}
             className="flex-1"
             placeholder="Button name"
-            onChange={(e) => onUpdate(action.id, { name: e.target.value })}
+            onChange={e => onUpdate(action.id, { name: e.target.value })}
           />
         </div>
         <Textarea
           value={action.action}
           className="min-h-[60px]"
           placeholder="Describe the action..."
-          onChange={(e) => onUpdate(action.id, { action: e.target.value })}
+          onChange={e => onUpdate(action.id, { action: e.target.value })}
         />
       </div>
       <Button
@@ -211,7 +194,7 @@ export default function Home() {
       timestamp: new Date(),
     },
   ]);
-  const [inputMessage, setInputMessage] = useState("");
+  const [inputMessage, setInputMessage] = useState('');
   const [isChatProcessing, setIsChatProcessing] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -244,22 +227,20 @@ export default function Home() {
   };
 
   const handleUpdateAction = (id: string, updates: Partial<ActionButton>) => {
-    setActions(actions.map(action =>
-      action.id === id ? { ...action, ...updates } : action
-    ));
+    setActions(actions.map(a => (a.id === id ? { ...a, ...updates } : a)));
   };
 
   const handleDeleteAction = (id: string) => {
-    setActions(actions.filter(action => action.id !== id));
+    setActions(actions.filter(a => a.id !== id));
   };
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DndDragEndEvent) => {
     const { active, over } = event;
 
-    if (active.id !== over.id) {
-      setActions((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
+    if (active.id !== over?.id) {
+      setActions(items => {
+        const oldIndex = items.findIndex(item => item.id === String(active.id));
+        const newIndex = items.findIndex(item => item.id === String(over?.id));
 
         return arrayMove(items, oldIndex, newIndex);
       });
@@ -276,7 +257,7 @@ export default function Home() {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInputMessage("");
+    setInputMessage('');
     setIsChatProcessing(true);
 
     try {
@@ -287,7 +268,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           message: inputMessage,
-          context: editorContent ? `Current editor content: ${editorContent}` : undefined
+          context: editorContent ? `Current editor content: ${editorContent}` : undefined,
         }),
       });
 
@@ -297,18 +278,24 @@ export default function Home() {
 
       const data = await response.json();
 
-      setMessages(prev => [...prev, {
-        text: data.text,
-        isUser: false,
-        timestamp: new Date(),
-      }]);
+      setMessages(prev => [
+        ...prev,
+        {
+          text: data.text,
+          isUser: false,
+          timestamp: new Date(),
+        },
+      ]);
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(prev => [...prev, {
-        text: "I'm sorry, I encountered an error. Please try again.",
-        isUser: false,
-        timestamp: new Date(),
-      }]);
+      setMessages(prev => [
+        ...prev,
+        {
+          text: "I'm sorry, I encountered an error. Please try again.",
+          isUser: false,
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsChatProcessing(false);
     }
@@ -351,7 +338,8 @@ export default function Home() {
       setEditorContent(data.text);
     } catch (error) {
       console.error('Action processing failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to process action. Please try again.';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to process action. Please try again.';
       alert(errorMessage);
     } finally {
       setIsProcessing(false);
@@ -360,15 +348,15 @@ export default function Home() {
 
   // Update the buttons in the Write tab to use configured actions
   const renderActionButtons = () => {
-    return actions.map((action) => (
+    return actions.map(action => (
       <Button
         key={action.id}
         variant="default"
-        className="w-full h-10 text-base font-medium bg-blue-500 hover:bg-blue-600"
+        className="h-10 w-full bg-blue-500 text-base font-medium hover:bg-blue-600"
         onClick={() => handleActionClick(action)}
         disabled={isProcessing || !llmConfig.type}
       >
-        <span className="text-xl mr-2">{action.emoji}</span>
+        <span className="mr-2 text-xl">{action.emoji}</span>
         {action.name}
       </Button>
     ));
@@ -384,7 +372,9 @@ export default function Home() {
         },
         body: JSON.stringify({
           type: config.type,
-          ...(config.type === 'openai' ? { api_key: config.apiKey } : { host: config.host, port: config.port }),
+          ...(config.type === 'openai'
+            ? { api_key: config.apiKey }
+            : { host: config.host, port: config.port }),
         }),
       });
 
@@ -393,7 +383,7 @@ export default function Home() {
       if (data.success) {
         setLLMConfig(config);
       } else {
-        throw new Error(data.message);
+        throw new Error(data.message || 'Failed to connect to LLM');
       }
     } catch (error) {
       console.error('Failed to connect:', error);
@@ -433,7 +423,7 @@ export default function Home() {
       <Dialog>
         <DialogTrigger asChild>
           <Button variant="outline" disabled={isConnecting}>
-            {isConnecting ? "Connecting..." : llmConfig.type ? "Update Connection" : "Connect Now"}
+            {isConnecting ? 'Connecting...' : llmConfig.type ? 'Update Connection' : 'Connect Now'}
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
@@ -470,7 +460,7 @@ export default function Home() {
                   type="password"
                   placeholder="Enter your OpenAI API key"
                   value={apiKey}
-                  onChange={(e) => {
+                  onChange={e => {
                     setApiKey(e.target.value);
                     setError(null);
                   }}
@@ -483,7 +473,7 @@ export default function Home() {
                   <Input
                     placeholder="Enter host"
                     value={host}
-                    onChange={(e) => {
+                    onChange={e => {
                       setHost(e.target.value);
                       setError(null);
                     }}
@@ -494,7 +484,7 @@ export default function Home() {
                   <Input
                     placeholder="Enter port"
                     value={port}
-                    onChange={(e) => {
+                    onChange={e => {
                       setPort(e.target.value);
                       setError(null);
                     }}
@@ -502,11 +492,9 @@ export default function Home() {
                 </div>
               </>
             )}
-            {error && (
-              <p className="text-sm text-red-500">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-500">{error}</p>}
             <Button onClick={handleConnect} disabled={isConnecting}>
-              {isConnecting ? "Connecting..." : "Connect"}
+              {isConnecting ? 'Connecting...' : 'Connect'}
             </Button>
           </div>
         </DialogContent>
@@ -515,11 +503,11 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Navbar */}
       <nav className="border-b bg-background">
-        <div className="px-4 flex h-14 items-center">
-          <span className="font-bold text-lg mr-8">CoWriter</span>
+        <div className="flex h-14 items-center px-4">
+          <span className="mr-8 text-lg font-bold">CoWriter</span>
 
           <Button
             variant="ghost"
@@ -544,30 +532,32 @@ export default function Home() {
 
       {/* Main Content */}
       {activeTab === 'write' && (
-        <main className="flex-1 flex min-h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)] overflow-hidden">
-          <div className="flex-1 p-4 flex overflow-hidden">
-            <PanelGroup direction="horizontal" className="flex gap-2 flex-1 overflow-hidden">
+        <main className="flex max-h-[calc(100vh-3.5rem)] min-h-[calc(100vh-3.5rem)] flex-1 overflow-hidden">
+          <div className="flex flex-1 overflow-hidden p-4">
+            <PanelGroup direction="horizontal" className="flex flex-1 gap-2 overflow-hidden">
               {/* Left side - Rich Text Editor */}
               <Panel defaultSize={70} minSize={30}>
-                <Card className="flex-1 flex flex-col overflow-hidden h-full">
+                <Card className="flex h-full flex-1 flex-col overflow-hidden">
                   <Editor
                     content={editorContent}
-                    onUpdate={(content) => setEditorContent(content)}
+                    onUpdate={content => setEditorContent(content)}
                     isLoading={isProcessing}
                   />
                 </Card>
               </Panel>
 
-              <PanelResizeHandle className="w-2 hover:bg-muted transition-colors rounded-sm" />
+              <PanelResizeHandle className="w-2 rounded-sm transition-colors hover:bg-muted" />
 
               {/* Right side - Action buttons and Chat */}
               <Panel defaultSize={30} minSize={20}>
-                <div className="flex flex-col gap-4 relative min-h-0 h-full">
+                <div className="relative flex h-full min-h-0 flex-col gap-4">
                   {/* Collapsible Buttons */}
-                  <Card className={`shadow-lg overflow-hidden ${!llmConfig.type ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <Card
+                    className={`overflow-hidden shadow-lg ${!llmConfig.type ? 'pointer-events-none opacity-50' : ''}`}
+                  >
                     <Button
                       variant="ghost"
-                      className="w-full flex items-center justify-between p-4"
+                      className="flex w-full items-center justify-between p-4"
                       onClick={() => setIsCollapsed(!isCollapsed)}
                     >
                       <span className="font-semibold">Actions</span>
@@ -578,35 +568,34 @@ export default function Home() {
                       )}
                     </Button>
                     <div
-                      className={`transition-all duration-200 ease-in-out ${isCollapsed ? "h-0" : "max-h-[300px] overflow-y-auto"}`}
+                      className={`transition-all duration-200 ease-in-out ${isCollapsed ? 'h-0' : 'max-h-[300px] overflow-y-auto'}`}
                     >
-                      <div className="p-2 space-y-2">
-                        {renderActionButtons()}
-                      </div>
+                      <div className="space-y-2 p-2">{renderActionButtons()}</div>
                     </div>
                   </Card>
 
                   {/* Chat */}
-                  <Card className={`shadow-lg flex-1 overflow-hidden min-h-0 ${!llmConfig.type ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <div className="flex flex-col h-full">
-                      <h3 className="text-lg font-semibold p-4 pb-2">Chat</h3>
+                  <Card
+                    className={`min-h-0 flex-1 overflow-hidden shadow-lg ${!llmConfig.type ? 'pointer-events-none opacity-50' : ''}`}
+                  >
+                    <div className="flex h-full flex-col">
+                      <h3 className="p-4 pb-2 text-lg font-semibold">Chat</h3>
                       <div
                         ref={chatContainerRef}
-                        className="flex-1 overflow-y-auto px-4 space-y-4 min-h-0"
+                        className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4"
                       >
                         {messages.map((message, index) => (
                           <div
                             key={index}
-                            className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
+                            className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
-                              className={`max-w-[80%] rounded-lg p-3 ${message.isUser
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                                }`}
+                              className={`max-w-[80%] rounded-lg p-3 ${
+                                message.isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                              }`}
                             >
-                              <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                              <p className="text-xs opacity-70 mt-1">
+                              <p className="whitespace-pre-wrap text-sm">{message.text}</p>
+                              <p className="mt-1 text-xs opacity-70">
                                 {message.timestamp.toLocaleTimeString()}
                               </p>
                             </div>
@@ -614,22 +603,31 @@ export default function Home() {
                         ))}
                         {isChatProcessing && (
                           <div className="flex justify-start">
-                            <div className="bg-muted rounded-lg p-3 flex items-center gap-2">
-                              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            <div className="flex items-center gap-2 rounded-lg bg-muted p-3">
+                              <div
+                                className="h-2 w-2 animate-bounce rounded-full bg-primary"
+                                style={{ animationDelay: '0ms' }}
+                              />
+                              <div
+                                className="h-2 w-2 animate-bounce rounded-full bg-primary"
+                                style={{ animationDelay: '150ms' }}
+                              />
+                              <div
+                                className="h-2 w-2 animate-bounce rounded-full bg-primary"
+                                style={{ animationDelay: '300ms' }}
+                              />
                             </div>
                           </div>
                         )}
                       </div>
-                      <div className="p-4 pt-2 border-t">
+                      <div className="border-t p-4 pt-2">
                         <div className="flex gap-2">
                           <Input
                             placeholder="Type a message..."
                             value={inputMessage}
-                            onChange={(e) => setInputMessage(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) {
+                            onChange={e => setInputMessage(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
                                 handleSendMessage();
                               }
@@ -650,10 +648,12 @@ export default function Home() {
 
                   {/* LLM Connection Overlay */}
                   {!llmConfig.type && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-lg">
+                    <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-background/50 backdrop-blur-[1px]">
                       <Card className="p-6 text-center shadow-lg">
-                        <h3 className="text-lg font-semibold mb-2">No LLM Connected</h3>
-                        <p className="text-sm text-muted-foreground mb-4">Connect to an LLM to use actions and chat</p>
+                        <h3 className="mb-2 text-lg font-semibold">No LLM Connected</h3>
+                        <p className="mb-4 text-sm text-muted-foreground">
+                          Connect to an LLM to use actions and chat
+                        </p>
                         <LLMConnectionModal />
                       </Card>
                     </div>
@@ -666,7 +666,7 @@ export default function Home() {
       )}
       {activeTab === 'configure' && (
         <main className="flex-1 p-4">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-7xl">
             {/* LLM Connection Section */}
             <Card className="mb-8 p-6">
               <div className="flex items-center justify-between">
@@ -691,27 +691,27 @@ export default function Home() {
               <div className="flex-1 space-y-8">
                 {/* About Me Section */}
                 <Card className="p-6">
-                  <h2 className="text-2xl font-semibold mb-4">About Me</h2>
+                  <h2 className="mb-4 text-2xl font-semibold">About Me</h2>
                   <div className="space-y-4">
                     <Textarea
                       placeholder="Share your background, expertise, and interests. This helps me understand your perspective and tailor the writing to match your voice and experience."
                       className="min-h-[200px]"
                       value={aboutMe}
-                      onChange={(e) => setAboutMe(e.target.value)}
+                      onChange={e => setAboutMe(e.target.value)}
                     />
                   </div>
                 </Card>
 
                 {/* Writing Style Section */}
                 <Card className="p-6">
-                  <h2 className="text-2xl font-semibold mb-4">Writing Style</h2>
+                  <h2 className="mb-4 text-2xl font-semibold">Writing Style</h2>
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium mb-1 block">Preferred Style</label>
+                      <label className="mb-1 block text-sm font-medium">Preferred Style</label>
                       <select
-                        className="w-full rounded-md border border-input bg-background px-3 h-10"
+                        className="h-10 w-full rounded-md border border-input bg-background px-3"
                         value={preferredStyle}
-                        onChange={(e) => setPreferredStyle(e.target.value)}
+                        onChange={e => setPreferredStyle(e.target.value)}
                       >
                         <option>Professional</option>
                         <option>Casual</option>
@@ -720,11 +720,11 @@ export default function Home() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-1 block">Tone</label>
+                      <label className="mb-1 block text-sm font-medium">Tone</label>
                       <select
-                        className="w-full rounded-md border border-input bg-background px-3 h-10"
+                        className="h-10 w-full rounded-md border border-input bg-background px-3"
                         value={tone}
-                        onChange={(e) => setTone(e.target.value)}
+                        onChange={e => setTone(e.target.value)}
                       >
                         <option>Formal</option>
                         <option>Informal</option>
@@ -739,12 +739,9 @@ export default function Home() {
               {/* Right Column - Action Buttons */}
               <div className="w-[500px]">
                 <Card className="p-6">
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-2xl font-semibold">Action Buttons</h2>
-                    <Button
-                      variant="outline"
-                      onClick={handleAddAction}
-                    >
+                    <Button variant="outline" onClick={handleAddAction}>
                       Add Action
                     </Button>
                   </div>
@@ -753,11 +750,8 @@ export default function Home() {
                     collisionDetection={closestCenter}
                     onDragEnd={handleDragEnd}
                   >
-                    <SortableContext
-                      items={actions}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {actions.map((action) => (
+                    <SortableContext items={actions} strategy={verticalListSortingStrategy}>
+                      {actions.map(action => (
                         <SortableActionItem
                           key={action.id}
                           action={action}

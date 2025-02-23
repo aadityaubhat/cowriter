@@ -24,7 +24,16 @@ CoWriter is an AI-powered writing assistant that helps you improve your writing 
 ## Project Structure
 
 - `/backend` - FastAPI backend service
+  - Python-based API with FastAPI
+  - Support for OpenAI and Llama.cpp models
+  - Type-safe with mypy
+  - Formatted with black and isort
+  - Linted with flake8
 - `/co_writer` - Next.js frontend application
+  - Modern React with TypeScript
+  - Beautiful UI with Tailwind CSS
+  - Real-time editing with Tiptap
+  - ESLint and Prettier for code quality
 
 ## Prerequisites
 
@@ -46,44 +55,70 @@ CoWriter is an AI-powered writing assistant that helps you improve your writing 
    ./setup.sh
    ```
    This will:
+   - Check for required dependencies
    - Install all dependencies for both frontend and backend
-   - Create example environment files
-   - Guide you through the configuration
+   - Set up development tools (linters, formatters)
+   - Configure pre-commit hooks
 
-3. Configure your environment:
-   - Update `backend/.env` with your OpenAI API key
-   - Modify any other environment variables if needed
+3. (Optional) Configure environment:
+   If you want to use OpenAI's API or customize the backend settings:
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+   Then edit `backend/.env` to add your OpenAI API key and customize other settings.
+   The application will work with default settings if no environment file is present.
 
-4. Start both frontend and backend services:
+4. Start the services:
    ```bash
    ./run.sh
    ```
+   This will:
+   - Start the backend service (FastAPI)
+   - Wait for backend health check
+   - Start the frontend service (Next.js)
+   - Monitor both services
 
-   This will start:
-   - Frontend at http://localhost:3000
-   - Backend at http://localhost:8000
-
-For detailed setup instructions, see:
-- [Frontend README](./co_writer/README.md)
-- [Backend README](./backend/README.md)
+   Access the application at:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
 
 ## Development
 
-To start the services separately:
-
-### Frontend
-```bash
-cd co_writer
-npm install
-npm run dev
-```
+For development work, you'll want to run the services separately with full development dependencies:
 
 ### Backend
 ```bash
 cd backend
-poetry install
+poetry install  # Includes development dependencies
 poetry shell
 uvicorn app.main:app --reload --port 8000
+```
+
+### Frontend
+```bash
+cd co_writer
+npm install  # Includes development dependencies
+npm run dev
+```
+
+### Code Quality Tools
+
+Backend:
+```bash
+cd backend
+poetry run black .  # Format code
+poetry run isort .  # Sort imports
+poetry run flake8  # Lint code
+poetry run mypy app/  # Type check
+```
+
+Frontend:
+```bash
+cd co_writer
+npm run lint  # Run ESLint
+npm run format  # Run Prettier
+npm run type-check  # Run TypeScript checks
 ```
 
 ## API Documentation
