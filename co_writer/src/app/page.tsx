@@ -4,7 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Editor } from '@/components/editor';
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Send, GripVertical, X, Smile } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronUp,
+  Send,
+  GripVertical,
+  X,
+  Smile,
+  FolderPlus,
+  History,
+  FileText,
+  Edit2,
+  Plus,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,6 +54,14 @@ import {
 } from '@/components/ui/select';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import type { DragEndEvent as DndDragEndEvent } from '@dnd-kit/core';
+
+interface HistoryItem {
+  id: string;
+  title: string;
+  content: string;
+  timestamp: number;
+  lastModified: number;
+}
 
 type Tab = 'write' | 'configure';
 
@@ -197,6 +217,130 @@ export default function Home() {
   const [inputMessage, setInputMessage] = useState('');
   const [isChatProcessing, setIsChatProcessing] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // History state
+  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Load history from localStorage on mount and ensure current document
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('cowriter_history');
+    let parsedHistory: HistoryItem[] = [];
+
+    if (savedHistory) {
+      parsedHistory = JSON.parse(savedHistory);
+      setHistory(parsedHistory);
+    }
+
+    // If no history or no selected document, create a new one
+    if (parsedHistory.length === 0) {
+      const newId = Date.now().toString();
+      const newItem: HistoryItem = {
+        id: newId,
+        title: 'Untitled Document',
+        content: '',
+        timestamp: Date.now(),
+        lastModified: Date.now(),
+      };
+      setHistory([newItem]);
+      setSelectedHistoryId(newId);
+    } else {
+      // Select the most recently modified document
+      const mostRecent = parsedHistory.reduce((prev, current) =>
+        current.lastModified > prev.lastModified ? current : prev
+      );
+      setSelectedHistoryId(mostRecent.id);
+      setEditorContent(mostRecent.content);
+    }
+  }, []);
+
+  // Save history to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('cowriter_history', JSON.stringify(history));
+  }, [history]);
+
+  // Delete document
+  const handleDeleteDocument = (id: string) => {
+    if (history.length === 1) {
+      // If this is the last document, create a new empty one
+      const newId = Date.now().toString();
+      const newItem: HistoryItem = {
+        id: newId,
+        title: 'Untitled Document',
+        content: '',
+        timestamp: Date.now(),
+        lastModified: Date.now(),
+      };
+      setHistory([newItem]);
+      setSelectedHistoryId(newId);
+      setEditorContent('');
+    } else {
+      // Remove the document and select another one
+      setHistory(prev => {
+        const newHistory = prev.filter(item => item.id !== id);
+        // If we're deleting the currently selected document, select the most recent one
+        if (id === selectedHistoryId) {
+          const mostRecent = newHistory.reduce((prev, current) =>
+            current.lastModified > prev.lastModified ? current : prev
+          );
+          setSelectedHistoryId(mostRecent.id);
+          setEditorContent(mostRecent.content);
+        }
+        return newHistory;
+      });
+    }
+  };
+
+  // Create new document
+  const handleNewDocument = () => {
+    const newId = Date.now().toString();
+    const newItem: HistoryItem = {
+      id: newId,
+      title: 'Untitled Document',
+      content: '',
+      timestamp: Date.now(),
+      lastModified: Date.now(),
+    };
+    setHistory([newItem, ...history]);
+    setSelectedHistoryId(newId);
+    setEditorContent('');
+  };
+
+  // Save current document to history
+  useEffect(() => {
+    if (selectedHistoryId && editorContent) {
+      setHistory(prev =>
+        prev.map(item =>
+          item.id === selectedHistoryId
+            ? { ...item, content: editorContent, lastModified: Date.now() }
+            : item
+        )
+      );
+    }
+  }, [editorContent, selectedHistoryId]);
+
+  // Load selected document
+  useEffect(() => {
+    if (selectedHistoryId) {
+      const selectedItem = history.find(item => item.id === selectedHistoryId);
+      if (selectedItem) {
+        setEditorContent(selectedItem.content);
+      }
+    }
+  }, [selectedHistoryId]);
+
+  // Rename document
+  const handleRenameDocument = (id: string, newTitle: string) => {
+    setHistory(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, title: newTitle || 'Untitled Document' } : item
+      )
+    );
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -502,6 +646,22 @@ export default function Home() {
     );
   };
 
+  // Handle title edit submission
+  const handleTitleSubmit = (id: string) => {
+    if (editingTitle.trim()) {
+      handleRenameDocument(id, editingTitle);
+    }
+    setEditingTitleId(null);
+    setEditingTitle('');
+  };
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (editingTitleId && titleInputRef.current) {
+      titleInputRef.current.focus();
+    }
+  }, [editingTitleId]);
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Navbar */}
@@ -524,7 +684,7 @@ export default function Home() {
             Configure
           </Button>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
           </div>
         </div>
@@ -533,11 +693,153 @@ export default function Home() {
       {/* Main Content */}
       {activeTab === 'write' && (
         <main className="flex max-h-[calc(100vh-3.5rem)] min-h-[calc(100vh-3.5rem)] flex-1 overflow-hidden">
+          {/* History Sidebar */}
+          <div
+            className={`flex border-r border-border/40 bg-background/95 backdrop-blur transition-all duration-300 supports-[backdrop-filter]:bg-background/60 ${isHistoryOpen ? 'w-64' : 'w-14'}`}
+          >
+            <div className="flex h-full w-full flex-col">
+              <div className="flex h-14 items-center justify-between border-b border-border/40 px-4">
+                {isHistoryOpen ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Documents</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 hover:bg-muted"
+                        onClick={() => setIsHistoryOpen(false)}
+                      >
+                        <ChevronUp className="h-4 w-4 rotate-90" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex w-full flex-col items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 hover:bg-muted"
+                      onClick={() => setIsHistoryOpen(true)}
+                    >
+                      <ChevronUp className="h-4 w-4 -rotate-90" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {isHistoryOpen && (
+                <>
+                  <div className="flex-1 overflow-y-auto p-2">
+                    <Button
+                      variant="ghost"
+                      className="mb-2 w-full justify-start text-sm hover:bg-muted/50"
+                      onClick={handleNewDocument}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      New Document
+                    </Button>
+                    {history.map(item => (
+                      <div key={item.id} className="group relative mb-1">
+                        <Button
+                          variant="ghost"
+                          className={`w-full justify-start text-left text-sm ${selectedHistoryId === item.id ? 'bg-muted/80 font-medium' : 'hover:bg-muted/50'}`}
+                          onClick={() => setSelectedHistoryId(item.id)}
+                        >
+                          <FileText className="mr-2 h-4 w-4 shrink-0" />
+                          <div className="flex-1 truncate">
+                            {editingTitleId === item.id ? (
+                              <form
+                                onSubmit={e => {
+                                  e.preventDefault();
+                                  handleTitleSubmit(item.id);
+                                }}
+                                onClick={e => e.stopPropagation()}
+                                className="flex-1"
+                              >
+                                <Input
+                                  ref={titleInputRef}
+                                  value={editingTitle}
+                                  onChange={e => setEditingTitle(e.target.value)}
+                                  onBlur={() => handleTitleSubmit(item.id)}
+                                  className="h-6 bg-background px-1 py-0 text-sm"
+                                />
+                              </form>
+                            ) : (
+                              <div className="truncate">{item.title}</div>
+                            )}
+                            <div className="text-xs text-muted-foreground/70">
+                              {new Date(item.lastModified).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </Button>
+                        <div className="absolute right-1 top-1/2 flex -translate-y-1/2 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-muted"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setEditingTitleId(item.id);
+                              setEditingTitle(item.title);
+                            }}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (confirm('Are you sure you want to delete this document?')) {
+                                handleDeleteDocument(item.id);
+                              }
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-border/40 p-2 text-center text-xs text-muted-foreground/70">
+                    History is stored in your browser
+                  </div>
+                </>
+              )}
+              {!isHistoryOpen && (
+                <div className="flex flex-col items-center gap-1 py-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mb-2 h-9 w-9 p-0 hover:bg-muted/50"
+                    onClick={handleNewDocument}
+                    title="New Document"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  {history.map(item => (
+                    <Button
+                      key={item.id}
+                      variant="ghost"
+                      size="sm"
+                      className={`h-9 w-9 p-0 ${selectedHistoryId === item.id ? 'bg-muted' : 'hover:bg-muted/50'}`}
+                      onClick={() => setSelectedHistoryId(item.id)}
+                      title={item.title}
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="flex flex-1 overflow-hidden p-4">
             <PanelGroup direction="horizontal" className="flex flex-1 gap-2 overflow-hidden">
               {/* Left side - Rich Text Editor */}
               <Panel defaultSize={70} minSize={30}>
-                <Card className="flex h-full flex-1 flex-col overflow-hidden">
+                <Card className="flex h-full flex-1 flex-col overflow-hidden border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                   <Editor
                     content={editorContent}
                     onUpdate={content => setEditorContent(content)}
@@ -590,9 +892,7 @@ export default function Home() {
                             className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
-                              className={`max-w-[80%] rounded-lg p-3 ${
-                                message.isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                              }`}
+                              className={`max-w-[80%] rounded-lg p-3 ${message.isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
                             >
                               <p className="whitespace-pre-wrap text-sm">{message.text}</p>
                               <p className="mt-1 text-xs opacity-70">
