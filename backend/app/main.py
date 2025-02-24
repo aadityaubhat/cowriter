@@ -109,7 +109,7 @@ class LLMConnectionManager:
                 "messages": [
                     {
                         "role": "system",
-                        "content": "You are a helpful writing assistant.",
+                        "content": "You are a helpful writing assistant. You take the user's prompt and return a modified text according to the user's preferences.",
                     },
                     {"role": "user", "content": prompt},
                 ],

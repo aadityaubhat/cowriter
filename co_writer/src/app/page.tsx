@@ -91,6 +91,13 @@ const defaultActions: ActionButton[] = [
   { id: '3', name: 'Critique', action: 'Provide feedback on the writing', emoji: '🎯' },
 ];
 
+const defaultConfig = {
+  actions: defaultActions,
+  aboutMe: '',
+  preferredStyle: 'Professional',
+  tone: 'Formal',
+};
+
 interface SortableActionItemProps {
   action: ActionButton;
   onUpdate: (id: string, updates: Partial<ActionButton>) => void;
@@ -662,6 +669,38 @@ export default function Home() {
     }
   }, [editingTitleId]);
 
+  // Load configuration from localStorage
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('cowriter_config');
+    if (savedConfig) {
+      const config = JSON.parse(savedConfig);
+      setActions(config.actions);
+      setAboutMe(config.aboutMe);
+      setPreferredStyle(config.preferredStyle);
+      setTone(config.tone);
+    }
+  }, []);
+
+  // Save configuration to localStorage whenever it changes
+  useEffect(() => {
+    const config = {
+      actions,
+      aboutMe,
+      preferredStyle,
+      tone,
+    };
+    localStorage.setItem('cowriter_config', JSON.stringify(config));
+  }, [actions, aboutMe, preferredStyle, tone]);
+
+  const handleResetConfig = () => {
+    if (confirm('Are you sure you want to reset all settings to default values?')) {
+      setActions(defaultActions);
+      setAboutMe(defaultConfig.aboutMe);
+      setPreferredStyle(defaultConfig.preferredStyle);
+      setTone(defaultConfig.tone);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Navbar */}
@@ -1063,6 +1102,17 @@ export default function Home() {
                   </DndContext>
                 </Card>
               </div>
+            </div>
+
+            <div className="mt-8 flex justify-center">
+              <Button
+                variant="outline"
+                size="lg"
+                className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                onClick={handleResetConfig}
+              >
+                Reset All Settings to Default
+              </Button>
             </div>
           </div>
         </main>
