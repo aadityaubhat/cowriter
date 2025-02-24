@@ -263,10 +263,15 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
 
   // Update editor content when prop changes
   useEffect(() => {
-    if (editor && content !== editor.getText()) {
-      const html = marked(content);
-      editor.commands.setContent(html);
-      updateWordCount(editor.getText());
+    if (editor) {
+      // If the content starts with '<', assume it's HTML; otherwise, convert markdown to HTML.
+      const newContent = content.trim().startsWith('<') ? content : marked(content);
+
+      // Only update if the new content is different from the current editor HTML.
+      if (newContent !== editor.getHTML()) {
+        editor.commands.setContent(newContent);
+        updateWordCount(editor.getText());
+      }
     }
   }, [editor, content, updateWordCount]);
 
