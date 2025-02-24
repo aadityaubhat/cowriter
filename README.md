@@ -4,19 +4,19 @@ CoWriter is an AI-powered writing assistant that helps you improve your writing 
 
 ## Screenshots
 
-### Writing Interface
-![Writing Interface](.github/assets/write_tab.png)
-*The main writing interface where you can edit text and apply various AI-powered actions*
+![CoWriter Interface](.github/assets/CoWriterUI.png)
+*The main CoWriter interface with AI-powered writing assistance*
 
-### Configuration
-![Configuration Interface](.github/assets/configure_tab.png)
-*Configure your AI model settings and preferences*
+## Video Demo
+[![CoWriter Demo Video](https://img.youtube.com/vi/XiomNY1v2J0/0.jpg)](https://youtu.be/XiomNY1v2J0)
+*Watch CoWriter in action*
 
 ## Features
 
 - **Text Expansion**: Elaborate on your ideas with AI-powered suggestions
 - **Text Shortening**: Make your writing more concise and impactful
 - **Writing Critique**: Get constructive feedback on your writing
+- **Custom Actions**: Define your own actions to help you write, e.g. Add Facts, Add Quotes, etc.
 - **Interactive Chat**: Engage in a conversation about your text
 - **Modern UI**: Clean and intuitive interface built with Next.js
 - **Flexible AI Backend**: Support for both OpenAI and Llama models
