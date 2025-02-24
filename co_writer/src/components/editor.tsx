@@ -188,7 +188,7 @@ const MenuBar = ({
           variant="ghost"
           size="sm"
           onClick={handleExportTxt}
-          className="text-blue-500 hover:bg-blue-50 hover:text-blue-600"
+          className="text-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
         >
           <FileText className="mr-2 h-4 w-4" />
           TXT
@@ -197,7 +197,7 @@ const MenuBar = ({
           variant="ghost"
           size="sm"
           onClick={handleExportDocx}
-          className="text-blue-500 hover:bg-blue-50 hover:text-blue-600"
+          className="text-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
         >
           <FileDown className="mr-2 h-4 w-4" />
           DOCX
@@ -207,7 +207,7 @@ const MenuBar = ({
           variant="ghost"
           size="sm"
           onClick={() => setIsFocusMode(!isFocusMode)}
-          className="text-blue-500 hover:bg-blue-50 hover:text-blue-600"
+          className="text-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
         >
           <Focus className="mr-2 h-4 w-4" />
           {isFocusMode ? 'Exit Focus' : 'Focus'}
@@ -276,28 +276,70 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
   }, [editor, content, updateWordCount]);
 
   return (
-    <div
-      className={`flex h-full w-full flex-col ${isFocusMode ? 'fixed inset-0 z-50 bg-background/95 backdrop-blur-sm' : ''}`}
-    >
-      <MenuBar editor={editor} isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode} />
+    <div className="h-full">
+      {/* Regular editor container */}
       <div
-        className={`relative flex min-h-0 flex-1 flex-col ${isFocusMode ? 'container mx-auto max-w-3xl' : ''}`}
+        className={`flex h-full w-full flex-col rounded-lg border bg-background transition-all duration-500 ease-in-out ${
+          isFocusMode ? 'pointer-events-none opacity-0' : 'opacity-100'
+        }`}
       >
-        <div className="flex-1 overflow-auto">
-          <EditorContent editor={editor} className="h-full" />
-        </div>
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
-            <div className="flex flex-col items-center gap-2">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="animate-pulse text-sm text-muted-foreground">Processing...</p>
+        <MenuBar editor={editor} isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode} />
+        {!isFocusMode && (
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <div className="flex-1 overflow-auto p-4">
+              <EditorContent
+                editor={editor}
+                className="prose h-full max-w-none focus:outline-none"
+              />
+            </div>
+            <div className="border-t bg-muted/10 px-4 py-2 text-right text-sm text-muted-foreground">
+              {wordCount} {wordCount === 1 ? 'word' : 'words'}
             </div>
           </div>
         )}
-        <div className="border-t p-2 text-right text-sm text-muted-foreground">
-          {wordCount} {wordCount === 1 ? 'word' : 'words'}
-        </div>
       </div>
+
+      {/* Focus mode overlay */}
+      <div
+        className={`fixed inset-0 z-[9998] bg-black/70 backdrop-blur-md transition-all duration-500 ${
+          isFocusMode ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={() => setIsFocusMode(false)}
+      />
+      <div
+        className={`
+          fixed bottom-[5vh] left-[5vw] right-[5vw] top-[5vh] 
+          z-[9999] flex flex-col rounded-xl border 
+          bg-background/95 shadow-2xl 
+          transition-all duration-500 ease-out
+          ${isFocusMode ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}
+        `}
+      >
+        <MenuBar editor={editor} isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode} />
+        {isFocusMode && (
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <div className="flex-1 overflow-auto p-6">
+              <EditorContent
+                editor={editor}
+                className="prose prose-lg h-full max-w-none focus:outline-none"
+              />
+            </div>
+            <div className="border-t bg-muted/10 px-6 py-3 text-right text-sm text-muted-foreground">
+              {wordCount} {wordCount === 1 ? 'word' : 'words'}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <p className="animate-pulse text-sm text-muted-foreground">Processing...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

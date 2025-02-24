@@ -839,13 +839,13 @@ export default function Home() {
             <PanelGroup direction="horizontal" className="flex flex-1 gap-2 overflow-hidden">
               {/* Left side - Rich Text Editor */}
               <Panel defaultSize={70} minSize={30}>
-                <Card className="flex h-full flex-1 flex-col overflow-hidden border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="h-full">
                   <Editor
                     content={editorContent}
                     onUpdate={content => setEditorContent(content)}
                     isLoading={isProcessing}
                   />
-                </Card>
+                </div>
               </Panel>
 
               <PanelResizeHandle className="w-2 rounded-sm transition-colors hover:bg-muted" />
