@@ -1,4 +1,5 @@
 import os
+import re
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -169,6 +170,12 @@ class ActionRequest(BaseModel):
     tone: str
 
 
+class EvalRequest(BaseModel):
+    eval_name: str
+    eval_description: str
+    text: str
+
+
 class ChatRequest(BaseModel):
     message: str
     context: Optional[str] = None
@@ -204,6 +211,33 @@ Please modify the text according to the task, style, and tone preferences. Forma
 - Use > for quotes or important callouts
 
 Return ONLY the modified text with Markdown formatting. Do not include any other text, comments, or explanations."""  # noqa: E501
+
+
+def format_eval_prompt(request: EvalRequest) -> str:
+    """Format the prompt for evaluation."""
+    return f"""As a writing assistant, please evaluate the following text based on the specified criteria.  # noqa: E501
+
+Evaluation Criteria: {request.eval_description}
+
+Text to Evaluate:
+{request.text}
+
+Please provide a detailed evaluation of the text based on the specified criteria. Your evaluation should:
+1. Start with a brief summary of your assessment
+2. Include specific examples from the text to support your evaluation
+3. Provide a numerical rating on a scale of 0-10 (where 0 is the worst and 10 is the best)
+4. Offer constructive suggestions for improvement
+
+IMPORTANT: You MUST include a clear numerical score between 0 and 10 in your evaluation.
+Format it as "Rating: X/10" where X is the score.
+
+Format your response using Markdown:
+- Use **bold** for emphasis
+- Use *italic* for subtle emphasis
+- Use bullet points where appropriate
+- Use > for important callouts
+
+Return ONLY the evaluation with Markdown formatting. Do not include any other text, comments, or explanations."""  # noqa: E501
 
 
 def _handle_openai_connection(api_key: str) -> LLMConnectionResponse:
@@ -270,6 +304,32 @@ async def submit_action(request: ActionRequest) -> Dict[str, Any]:
         return {"success": True, "text": response_text}
     except Exception as e:
         print(f"Error processing action: {str(e)}")
+        return {"success": False, "detail": str(e)}
+
+
+@app.post("/api/submit_eval")
+async def submit_eval(request: EvalRequest) -> Dict[str, Any]:
+    try:
+        print("Sending evaluation prompt to LLM:", format_eval_prompt(request))
+        response_text = await llm_manager.generate_text(format_eval_prompt(request))
+
+        # Extract score from the response
+        score = 5  # Default score
+        rating_match = re.search(r"rating:?\s*(\d+)(?:\s*\/\s*10)?", response_text, re.IGNORECASE)
+        score_match = re.search(r"score:?\s*(\d+)(?:\s*\/\s*10)?", response_text, re.IGNORECASE)
+
+        if rating_match and rating_match.group(1):
+            extracted_score = int(rating_match.group(1))
+            if 0 <= extracted_score <= 10:
+                score = extracted_score
+        elif score_match and score_match.group(1):
+            extracted_score = int(score_match.group(1))
+            if 0 <= extracted_score <= 10:
+                score = extracted_score
+
+        return {"success": True, "result": response_text, "score": score}
+    except Exception as e:
+        print(f"Error processing evaluation: {str(e)}")
         return {"success": False, "detail": str(e)}
 
 

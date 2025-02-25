@@ -16,7 +16,9 @@ import {
   FileText,
   Edit2,
   Plus,
+  Eye,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Textarea } from '@/components/ui/textarea';
@@ -78,6 +80,15 @@ interface ActionButton {
   emoji: string;
 }
 
+interface EvalItem {
+  id: string;
+  name: string;
+  description: string;
+  emoji: string;
+  score?: number;
+  result?: string;
+}
+
 interface LLMConfig {
   type: 'openai' | 'llama' | null;
   apiKey?: string;
@@ -91,8 +102,30 @@ const defaultActions: ActionButton[] = [
   { id: '3', name: 'Critique', action: 'Provide feedback on the writing', emoji: '🎯' },
 ];
 
+const defaultEvals: EvalItem[] = [
+  {
+    id: '1',
+    name: 'Interesting',
+    description: 'Evaluate how interesting and engaging the text is',
+    emoji: '🧠',
+  },
+  {
+    id: '2',
+    name: 'Spammy',
+    description: 'Check if the text contains spam-like content or excessive marketing language',
+    emoji: '🚫',
+  },
+  {
+    id: '3',
+    name: 'Clarity',
+    description: 'Assess how clear and easy to understand the text is',
+    emoji: '💡',
+  },
+];
+
 const defaultConfig = {
   actions: defaultActions,
+  evals: defaultEvals,
   aboutMe: '',
   preferredStyle: 'Professional',
   tone: 'Formal',
@@ -203,10 +236,117 @@ function SortableActionItem({ action, onUpdate, onDelete }: SortableActionItemPr
   );
 }
 
+interface SortableEvalItemProps {
+  eval: EvalItem;
+  onUpdate: (id: string, updates: Partial<EvalItem>) => void;
+  onDelete: (id: string) => void;
+}
+
+function SortableEvalItem({ eval: evalItem, onUpdate, onDelete }: SortableEvalItemProps) {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: evalItem.id,
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        pickerRef.current &&
+        buttonRef.current &&
+        !pickerRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, []);
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    onUpdate(evalItem.id, { emoji: emojiData.emoji });
+    setShowEmojiPicker(false);
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="mb-2 flex items-center gap-2 rounded-lg border bg-card p-4"
+    >
+      <div {...attributes} {...listeners}>
+        <GripVertical className="h-5 w-5 cursor-grab text-muted-foreground" />
+      </div>
+      <div className="flex-1">
+        <div className="mb-2 flex gap-2">
+          <div className="relative">
+            <Button
+              ref={buttonRef}
+              variant="outline"
+              size="sm"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="w-20 text-lg"
+            >
+              {evalItem.emoji || <Smile className="h-4 w-4" />}
+            </Button>
+            {showEmojiPicker && (
+              <div ref={pickerRef} className="absolute left-0 top-full z-50 mt-1">
+                <EmojiPicker onEmojiClick={handleEmojiClick} />
+              </div>
+            )}
+          </div>
+          <Input
+            value={evalItem.name}
+            className="flex-1"
+            placeholder="Eval name"
+            onChange={e => onUpdate(evalItem.id, { name: e.target.value })}
+          />
+        </div>
+        <Textarea
+          value={evalItem.description}
+          className="min-h-[60px]"
+          placeholder="Describe what this eval should check for..."
+          onChange={e => onUpdate(evalItem.id, { description: e.target.value })}
+        />
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-muted-foreground hover:text-destructive"
+        onClick={() => onDelete(evalItem.id)}
+      >
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('write');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isEvalsCollapsed, setIsEvalsCollapsed] = useState(false);
   const [actions, setActions] = useState<ActionButton[]>(defaultActions);
+  const [evals, setEvals] = useState<EvalItem[]>(defaultEvals);
   const [llmConfig, setLLMConfig] = useState<LLMConfig>({ type: null });
   const [isConnecting, setIsConnecting] = useState(false);
   const [aboutMe, setAboutMe] = useState('');
@@ -396,6 +536,201 @@ export default function Home() {
         return arrayMove(items, oldIndex, newIndex);
       });
     }
+  };
+
+  // Eval handlers
+  const handleAddEval = () => {
+    const newId = String(evals.length + 1);
+    setEvals([
+      ...evals,
+      {
+        id: newId,
+        name: 'New Eval',
+        description: 'Describe what this eval should check for...',
+        emoji: '📊',
+      },
+    ]);
+  };
+
+  const handleUpdateEval = (id: string, updates: Partial<EvalItem>) => {
+    setEvals(evals.map(e => (e.id === id ? { ...e, ...updates } : e)));
+  };
+
+  const handleDeleteEval = (id: string) => {
+    setEvals(evals.filter(e => e.id !== id));
+  };
+
+  const handleEvalDragEnd = (event: DndDragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setEvals(items => {
+        const oldIndex = items.findIndex(item => item.id === String(active.id));
+        const newIndex = items.findIndex(item => item.id === String(over?.id));
+
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const handleEvalClick = async (evalItem: EvalItem) => {
+    if (!llmConfig.type) {
+      alert('Please connect to an LLM first');
+      return;
+    }
+
+    if (!editorContent.trim()) {
+      alert('Please enter some text in the editor first');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/submit_eval', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eval_name: evalItem.name.toLowerCase(),
+          eval_description: evalItem.description,
+          text: editorContent,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to process evaluation');
+      }
+
+      // Extract score from the result (assuming the backend returns a score)
+      const score = data.score || extractScoreFromResult(data.result);
+
+      // Update the eval item with the score and result
+      setEvals(prevEvals =>
+        prevEvals.map(e => (e.id === evalItem.id ? { ...e, score, result: data.result } : e))
+      );
+    } catch (error) {
+      console.error('Eval processing failed:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to process evaluation. Please try again.';
+      alert(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Helper function to extract score from evaluation result text
+  const extractScoreFromResult = (result: string): number => {
+    // Look for patterns like "Rating: 8/10" or "Score: 8" or just a number between 0-10
+    const ratingMatch = result.match(/rating:?\s*(\d+)(?:\s*\/\s*10)?/i);
+    const scoreMatch = result.match(/score:?\s*(\d+)(?:\s*\/\s*10)?/i);
+
+    if (ratingMatch && ratingMatch[1]) {
+      const score = parseInt(ratingMatch[1], 10);
+      return score >= 0 && score <= 10 ? score : 5;
+    }
+
+    if (scoreMatch && scoreMatch[1]) {
+      const score = parseInt(scoreMatch[1], 10);
+      return score >= 0 && score <= 10 ? score : 5;
+    }
+
+    // Default score if we can't extract one
+    return 5;
+  };
+
+  // Render eval buttons
+  const renderEvalButtons = () => {
+    return evals.map(evalItem => (
+      <div key={evalItem.id} className="mb-2">
+        <div className="flex items-center gap-2">
+          {/* Eval button */}
+          <Button
+            variant="default"
+            className="h-10 flex-1 bg-blue-500 text-base font-medium hover:bg-blue-600"
+            onClick={() => handleEvalClick(evalItem)}
+            disabled={isProcessing || !llmConfig.type}
+          >
+            <span className="mr-2 text-xl">{evalItem.emoji}</span>
+            {evalItem.name}
+          </Button>
+
+          {/* Score display */}
+          <div
+            className={`flex h-10 w-14 items-center justify-center rounded-md text-sm font-medium ${
+              evalItem.score !== undefined
+                ? evalItem.score >= 7
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                  : evalItem.score >= 4
+                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+            }`}
+          >
+            <span className="font-medium">
+              {evalItem.score !== undefined ? evalItem.score : 'N/A'}
+            </span>
+          </div>
+
+          {/* View details button */}
+          {evalItem.result && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 text-muted-foreground hover:text-foreground"
+                  title="View Details"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <span>{evalItem.emoji}</span>
+                    <span>{evalItem.name}</span>
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground">
+                    {evalItem.description}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="font-medium">Score:</span>
+                    <span
+                      className={`rounded-md px-2 py-1 text-sm font-medium ${
+                        evalItem.score !== undefined
+                          ? evalItem.score >= 7
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                            : evalItem.score >= 4
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                      }`}
+                    >
+                      {evalItem.score !== undefined ? evalItem.score : 'N/A'}
+                    </span>
+                    {evalItem.score !== undefined && (
+                      <span className="text-sm text-muted-foreground">
+                        ({evalItem.score >= 7 ? 'Good' : evalItem.score >= 4 ? 'Average' : 'Poor'})
+                      </span>
+                    )}
+                  </div>
+                  <div className="border-t pt-4">
+                    <div className="markdown-content">
+                      <ReactMarkdown>{evalItem.result || ''}</ReactMarkdown>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </div>
+    ));
   };
 
   const handleSendMessage = async () => {
@@ -675,26 +1010,44 @@ export default function Home() {
     if (savedConfig) {
       const config = JSON.parse(savedConfig);
       setActions(config.actions);
+      if (config.evals) setEvals(config.evals);
       setAboutMe(config.aboutMe);
       setPreferredStyle(config.preferredStyle);
       setTone(config.tone);
     }
   }, []);
 
+  // Reset eval scores when editor content changes
+  useEffect(() => {
+    if (editorContent) {
+      setEvals(prevEvals => prevEvals.map(e => ({ ...e, score: undefined, result: undefined })));
+    }
+  }, [editorContent]);
+
   // Save configuration to localStorage whenever it changes
   useEffect(() => {
+    // Strip out score and result properties from evals before saving
+    const evalsToSave = evals.map(({ id, name, description, emoji }) => ({
+      id,
+      name,
+      description,
+      emoji,
+    }));
+
     const config = {
       actions,
+      evals: evalsToSave,
       aboutMe,
       preferredStyle,
       tone,
     };
     localStorage.setItem('cowriter_config', JSON.stringify(config));
-  }, [actions, aboutMe, preferredStyle, tone]);
+  }, [actions, evals, aboutMe, preferredStyle, tone]);
 
   const handleResetConfig = () => {
     if (confirm('Are you sure you want to reset all settings to default values?')) {
       setActions(defaultActions);
+      setEvals(defaultEvals);
       setAboutMe(defaultConfig.aboutMe);
       setPreferredStyle(defaultConfig.preferredStyle);
       setTone(defaultConfig.tone);
@@ -901,7 +1254,7 @@ export default function Home() {
                       className="flex w-full items-center justify-between p-4"
                       onClick={() => setIsCollapsed(!isCollapsed)}
                     >
-                      <span className="font-semibold">Actions</span>
+                      <span className="text-lg font-semibold">Actions</span>
                       {isCollapsed ? (
                         <ChevronDown className="h-4 w-4" />
                       ) : (
@@ -912,6 +1265,29 @@ export default function Home() {
                       className={`transition-all duration-200 ease-in-out ${isCollapsed ? 'h-0' : 'max-h-[300px] overflow-y-auto'}`}
                     >
                       <div className="space-y-2 p-2">{renderActionButtons()}</div>
+                    </div>
+                  </Card>
+
+                  {/* Evals Box */}
+                  <Card
+                    className={`overflow-hidden shadow-lg ${!llmConfig.type ? 'pointer-events-none opacity-50' : ''}`}
+                  >
+                    <Button
+                      variant="ghost"
+                      className="flex w-full items-center justify-between p-4"
+                      onClick={() => setIsEvalsCollapsed(!isEvalsCollapsed)}
+                    >
+                      <span className="text-lg font-semibold">Evals</span>
+                      {isEvalsCollapsed ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronUp className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <div
+                      className={`transition-all duration-200 ease-in-out ${isEvalsCollapsed ? 'h-0' : 'max-h-[300px] overflow-y-auto'}`}
+                    >
+                      <div className="space-y-2 p-2">{renderEvalButtons()}</div>
                     </div>
                   </Card>
 
@@ -1096,6 +1472,32 @@ export default function Home() {
                           action={action}
                           onUpdate={handleUpdateAction}
                           onDelete={handleDeleteAction}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                </Card>
+
+                {/* Evals Configuration */}
+                <Card className="mt-8 p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-2xl font-semibold">Evals</h2>
+                    <Button variant="outline" onClick={handleAddEval}>
+                      Add Eval
+                    </Button>
+                  </div>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleEvalDragEnd}
+                  >
+                    <SortableContext items={evals} strategy={verticalListSortingStrategy}>
+                      {evals.map(evalItem => (
+                        <SortableEvalItem
+                          key={evalItem.id}
+                          eval={evalItem}
+                          onUpdate={handleUpdateEval}
+                          onDelete={handleDeleteEval}
                         />
                       ))}
                     </SortableContext>

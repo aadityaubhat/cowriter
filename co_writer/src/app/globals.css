@@ -6,6 +6,59 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Markdown content styling */
+.markdown-content {
+  @apply text-sm leading-relaxed;
+}
+
+.markdown-content p {
+  @apply my-2;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  @apply my-3 font-semibold;
+}
+
+.markdown-content h1 {
+  @apply text-xl;
+}
+
+.markdown-content h2 {
+  @apply text-lg;
+}
+
+.markdown-content h3 {
+  @apply text-base;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  @apply my-2 pl-5;
+}
+
+.markdown-content ul {
+  @apply list-disc;
+}
+
+.markdown-content ol {
+  @apply list-decimal;
+}
+
+.markdown-content code {
+  @apply rounded bg-muted px-1 py-0.5 text-xs;
+}
+
+.markdown-content pre {
+  @apply my-3 overflow-x-auto rounded bg-muted p-3;
+}
+
+.markdown-content blockquote {
+  @apply my-3 border-l-4 border-muted pl-4 italic;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
