@@ -221,11 +221,14 @@ interface EditorProps {
   content: string;
   onUpdate: (content: string) => void;
   isLoading?: boolean;
+  title?: string;
+  onTitleChange?: (title: string) => void;
 }
 
-export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
+export function Editor({ content, onUpdate, isLoading = false, title = "", onTitleChange }: EditorProps) {
   const [wordCount, setWordCount] = useState(0);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [documentTitle, setDocumentTitle] = useState(title);
 
   const updateWordCount = useCallback((text: string) => {
     const words = text
@@ -274,6 +277,20 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
       }
     }
   }, [editor, content, updateWordCount]);
+  
+  // Update document title when title prop changes
+  useEffect(() => {
+    setDocumentTitle(title);
+  }, [title]);
+  
+  // Handle title changes
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setDocumentTitle(newTitle);
+    if (onTitleChange) {
+      onTitleChange(newTitle);
+    }
+  };
 
   return (
     <div className="h-full">
@@ -283,6 +300,16 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
           isFocusMode ? 'pointer-events-none opacity-0' : 'opacity-100'
         }`}
       >
+        {/* Title input */}
+        <div className="flex items-center border-b px-4 py-2">
+          <input
+            type="text"
+            value={documentTitle}
+            onChange={handleTitleChange}
+            placeholder="Untitled Document"
+            className="w-full border-none bg-transparent text-xl font-medium outline-none placeholder:text-muted-foreground/50"
+          />
+        </div>
         <MenuBar editor={editor} isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode} />
         {!isFocusMode && (
           <div className="relative flex min-h-0 flex-1 flex-col">
@@ -315,6 +342,16 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
           ${isFocusMode ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}
         `}
       >
+        {/* Title input in focus mode */}
+        <div className="flex items-center border-b px-6 py-3">
+          <input
+            type="text"
+            value={documentTitle}
+            onChange={handleTitleChange}
+            placeholder="Untitled Document"
+            className="w-full border-none bg-transparent text-2xl font-medium outline-none placeholder:text-muted-foreground/50"
+          />
+        </div>
         <MenuBar editor={editor} isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode} />
         {isFocusMode && (
           <div className="relative flex min-h-0 flex-1 flex-col">

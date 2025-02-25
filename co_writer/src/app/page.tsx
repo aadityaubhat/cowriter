@@ -1236,6 +1236,12 @@ export default function Home() {
                     content={editorContent}
                     onUpdate={content => setEditorContent(content)}
                     isLoading={isProcessing}
+                    title={selectedHistoryId ? history.find(item => item.id === selectedHistoryId)?.title || "" : ""}
+                    onTitleChange={(newTitle) => {
+                      if (selectedHistoryId) {
+                        handleRenameDocument(selectedHistoryId, newTitle);
+                      }
+                    }}
                   />
                 </div>
               </Panel>
