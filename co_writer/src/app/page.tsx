@@ -1231,12 +1231,29 @@ export default function Home() {
             <PanelGroup direction="horizontal" className="flex flex-1 gap-2 overflow-hidden">
               {/* Left side - Rich Text Editor */}
               <Panel defaultSize={70} minSize={30}>
-                <div className="h-full">
-                  <Editor
-                    content={editorContent}
-                    onUpdate={content => setEditorContent(content)}
-                    isLoading={isProcessing}
-                  />
+                <div className="flex h-full flex-col">
+                  {/* Document Title Input */}
+                  {selectedHistoryId && (
+                    <div className="px-4 pb-1 pt-3">
+                      <Input
+                        value={history.find(item => item.id === selectedHistoryId)?.title || ''}
+                        onChange={e => {
+                          const newTitle = e.target.value;
+                          handleRenameDocument(selectedHistoryId, newTitle);
+                        }}
+                        placeholder="Document Title"
+                        className="rounded-none border-0 border-b border-border/40 px-1 py-1 text-lg font-medium focus-visible:border-primary focus-visible:ring-0"
+                        aria-label="Document Title"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Editor
+                      content={editorContent}
+                      onUpdate={content => setEditorContent(content)}
+                      isLoading={isProcessing}
+                    />
+                  </div>
                 </div>
               </Panel>
 
