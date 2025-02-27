@@ -71,6 +71,7 @@ class ActionRequest(BaseModel):
     about_me: str = Field(..., description="User background information")
     preferred_style: str = Field(..., description="Preferred writing style")
     tone: str = Field(..., description="Desired tone for the text")
+    document_type: str = Field("Custom", description="Type of document being edited")
 
 
 class ActionResponse(BaseModel):
@@ -165,7 +166,89 @@ class ActionPromptFormatter:
 
     def format_prompt(self, request: ActionRequest) -> str:
         """Format the prompt with user context and preferences."""
-        return f"""As a writing assistant, please help modify the following text.  # noqa: E501
+        document_type_guidance = ""
+
+        if request.document_type:
+            if request.document_type == "X":
+                document_type_guidance = """
+Document Type: X (Twitter)
+STRICT REQUIREMENT: The response MUST be 280 characters or less.
+X (Twitter) posts are extremely short. Use concise language, abbreviations when appropriate.
+Include 1-2 relevant hashtags only if space permits. DO NOT exceed 280 characters under any circumstances.
+If the original content is too long, focus on the most impactful point only.
+Character limits are ABSOLUTE - your ENTIRE response must be under 280 characters including spaces and punctuation."""
+            elif request.document_type == "LinkedIn":
+                document_type_guidance = """
+Document Type: LinkedIn
+LinkedIn is a professional network. Content should be business-appropriate and professional.
+Typical LinkedIn posts are 1-3 paragraphs. For longer content, use clear formatting and headlines.
+Focus on professional insights, career development, industry trends, or thought leadership.
+Avoid overly promotional language. Include a call-to-action when appropriate."""
+            elif request.document_type == "Threads":
+                document_type_guidance = """
+Document Type: Threads
+STRICT REQUIREMENT: The response MUST be 500 characters or less.
+Threads posts are concise and conversational. Can be part of a sequence of related posts.
+Visual, engaging, and personal tone works well. Keep paragraphs very short.
+Focus on clarity and engagement rather than formal structure.
+Character limits are ABSOLUTE - your ENTIRE response must be under 500 characters including spaces and punctuation."""
+            elif request.document_type == "Reddit":
+                document_type_guidance = """
+Document Type: Reddit
+Reddit allows longer form content. Format for readability with paragraphs, headers, and bullet points.
+Consider the informational, discussion-oriented nature of Reddit. Include relevant information and context.
+Use a conversational but clear tone. Structure with clear points for engagement and discussion.
+Avoid marketing language, as Reddit users respond poorly to obvious promotion."""
+            elif request.document_type == "Blog":
+                document_type_guidance = """
+Document Type: Blog
+Blogs are structured content with clear sections, headers, and an engaging flow.
+Include an attention-grabbing introduction, well-organized body content, and a conclusion.
+Use varied sentence structure, engaging storytelling, and visual elements like lists and quotes.
+Aim for depth and value to the reader, with appropriate SEO considerations."""
+            elif request.document_type == "Essay":
+                document_type_guidance = """
+Document Type: Essay
+Essays are formal, structured pieces with clear thesis, supporting arguments, and conclusion.
+Maintain logical flow and coherent structure throughout. Use transitions between paragraphs.
+Support claims with evidence or reasoning. Maintain a formal academic tone if appropriate.
+End with a strong conclusion that reinforces the main points or thesis."""
+            elif request.document_type != "Custom":
+                document_type_guidance = f"""
+Document Type: {request.document_type}
+This content is intended for {request.document_type}. Please ensure your modifications are appropriate for this platform/format,
+following its typical style, length constraints, and engagement patterns."""
+
+        # Create a modified formatting guide based on document type
+        formatting_guide = """Format your response using Markdown:  # noqa: E501
+- Use # for main headings
+- Use ## for subheadings
+- Use **bold** for emphasis
+- Use *italic* for subtle emphasis
+- Use bullet points where appropriate
+- Use numbered lists for sequential items
+- Use > for quotes or important callouts"""
+
+        # For X/Twitter and Threads, simplify the formatting guide to discourage complex formatting
+        if request.document_type in ["X", "Threads"]:
+            formatting_guide = """Keep formatting minimal and appropriate for short-form content."""
+
+        # Add specific character count validation instructions for X/Twitter
+        character_count_warning = ""
+        if request.document_type == "X":
+            character_count_warning = """
+CRITICAL: THE LENGTH LIMIT IS 280 CHARACTERS FOR X (TWITTER) POSTS. COUNT YOUR CHARACTERS CAREFULLY.
+Your final output MUST be 280 characters or fewer.
+If your draft exceeds this limit, aggressively condense until it fits the 280 character limit.
+This is not a suggestion but a hard requirement."""
+        elif request.document_type == "Threads":
+            character_count_warning = """
+CRITICAL: THE LENGTH LIMIT IS 500 CHARACTERS FOR THREADS POSTS. COUNT YOUR CHARACTERS CAREFULLY.
+Your final output MUST be 500 characters or fewer.
+If your draft exceeds this limit, aggressively condense until it fits the 500 character limit.
+This is not a suggestion but a hard requirement."""
+
+        return f"""As a writing assistant, please help modify the following text according to the specified requirements.  # noqa: E501
 
 User Background:
 {request.about_me}
@@ -173,22 +256,17 @@ User Background:
 Writing Preferences:
 - Style: {request.preferred_style}
 - Tone: {request.tone}
+{document_type_guidance}
 
 Task: {request.action_description}
 
 Original Text:
 {request.text}
 
-Please modify the text according to the task, style, and tone preferences. Format your response using Markdown:  # noqa: E501
-- Use # for main headings
-- Use ## for subheadings
-- Use **bold** for emphasis
-- Use *italic* for subtle emphasis
-- Use bullet points where appropriate
-- Use numbered lists for sequential items
-- Use > for quotes or important callouts
+{formatting_guide}
+{character_count_warning}
 
-Return ONLY the modified text with Markdown formatting. Do not include any other text, comments, or explanations."""  # noqa: E501
+Return ONLY the modified text with appropriate formatting. Do not include any other text, comments, or explanations."""  # noqa: E501
 
 
 class EvalPromptFormatter:
@@ -298,7 +376,7 @@ class OpenAIProvider(BaseLLMProvider):
         """Initialize the OpenAI provider."""
         self._api_key: Optional[str] = None
         self._is_connected = False
-        self._model = "gpt-3.5-turbo"
+        self._model = "gpt-4o-mini"
 
     def connect(self, api_key: str) -> None:
         """Connect to the OpenAI API."""

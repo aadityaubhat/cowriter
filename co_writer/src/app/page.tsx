@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Editor } from '@/components/editor';
+import { Editor, DocumentType } from '@/components/editor';
 import { useState, useEffect, useRef } from 'react';
 import {
   ChevronDown,
@@ -63,6 +63,7 @@ interface HistoryItem {
   content: string;
   timestamp: number;
   lastModified: number;
+  documentType?: string;
 }
 
 type Tab = 'write' | 'configure';
@@ -392,6 +393,7 @@ export default function Home() {
         content: '',
         timestamp: Date.now(),
         lastModified: Date.now(),
+        documentType: 'Custom',
       };
       setHistory([newItem]);
       setSelectedHistoryId(newId);
@@ -421,6 +423,7 @@ export default function Home() {
         content: '',
         timestamp: Date.now(),
         lastModified: Date.now(),
+        documentType: 'Custom',
       };
       setHistory([newItem]);
       setSelectedHistoryId(newId);
@@ -451,6 +454,7 @@ export default function Home() {
       content: '',
       timestamp: Date.now(),
       lastModified: Date.now(),
+      documentType: 'Custom',
     };
     setHistory([newItem, ...history]);
     setSelectedHistoryId(newId);
@@ -485,6 +489,15 @@ export default function Home() {
     setHistory(prev =>
       prev.map(item =>
         item.id === id ? { ...item, title: newTitle || 'Untitled Document' } : item
+      )
+    );
+  };
+  
+  // Update document type
+  const handleDocumentTypeChange = (id: string, documentType: DocumentType) => {
+    setHistory(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, documentType } : item
       )
     );
   };
@@ -812,6 +825,9 @@ export default function Home() {
           about_me: aboutMe,
           preferred_style: preferredStyle,
           tone: tone,
+          document_type: selectedHistoryId ? 
+            history.find(item => item.id === selectedHistoryId)?.documentType || "Custom" : 
+            "Custom",
         }),
       });
 
@@ -1240,6 +1256,15 @@ export default function Home() {
                     onTitleChange={(newTitle) => {
                       if (selectedHistoryId) {
                         handleRenameDocument(selectedHistoryId, newTitle);
+                      }
+                    }}
+                    documentType={selectedHistoryId ? 
+                      (history.find(item => item.id === selectedHistoryId)?.documentType as DocumentType) || "Custom" : 
+                      "Custom"
+                    }
+                    onDocumentTypeChange={(type) => {
+                      if (selectedHistoryId) {
+                        handleDocumentTypeChange(selectedHistoryId, type);
                       }
                     }}
                   />

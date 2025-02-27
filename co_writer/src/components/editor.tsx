@@ -20,10 +20,18 @@ import {
   FileDown,
   Quote,
   Strikethrough,
+  ChevronDown,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
 import { Editor as TiptapEditor } from '@tiptap/react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 
 const CustomFontSize = Mark.create({
   name: 'fontSize',
@@ -217,18 +225,35 @@ const MenuBar = ({
   );
 };
 
+export type DocumentType = 'Custom' | 'Blog' | 'Essay' | 'LinkedIn' | 'X' | 'Threads' | 'Reddit';
+
+export const DOCUMENT_TYPES: DocumentType[] = [
+  'Custom', 'Blog', 'Essay', 'LinkedIn', 'X', 'Threads', 'Reddit'
+];
+
 interface EditorProps {
   content: string;
   onUpdate: (content: string) => void;
   isLoading?: boolean;
   title?: string;
   onTitleChange?: (title: string) => void;
+  documentType?: DocumentType;
+  onDocumentTypeChange?: (type: DocumentType) => void;
 }
 
-export function Editor({ content, onUpdate, isLoading = false, title = "", onTitleChange }: EditorProps) {
+export function Editor({ 
+  content, 
+  onUpdate, 
+  isLoading = false, 
+  title = "", 
+  onTitleChange,
+  documentType = "Custom",
+  onDocumentTypeChange
+}: EditorProps) {
   const [wordCount, setWordCount] = useState(0);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [documentTitle, setDocumentTitle] = useState(title);
+  const [docType, setDocType] = useState<DocumentType>(documentType);
 
   const updateWordCount = useCallback((text: string) => {
     const words = text
@@ -283,12 +308,26 @@ export function Editor({ content, onUpdate, isLoading = false, title = "", onTit
     setDocumentTitle(title);
   }, [title]);
   
+  // Update document type when prop changes
+  useEffect(() => {
+    setDocType(documentType);
+  }, [documentType]);
+  
   // Handle title changes
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
     setDocumentTitle(newTitle);
     if (onTitleChange) {
       onTitleChange(newTitle);
+    }
+  };
+  
+  // Handle document type changes
+  const handleDocumentTypeChange = (value: string) => {
+    const newType = value as DocumentType;
+    setDocType(newType);
+    if (onDocumentTypeChange) {
+      onDocumentTypeChange(newType);
     }
   };
 
@@ -300,15 +339,31 @@ export function Editor({ content, onUpdate, isLoading = false, title = "", onTit
           isFocusMode ? 'pointer-events-none opacity-0' : 'opacity-100'
         }`}
       >
-        {/* Title input */}
-        <div className="flex items-center border-b px-4 py-2">
-          <input
-            type="text"
-            value={documentTitle}
-            onChange={handleTitleChange}
-            placeholder="Untitled Document"
-            className="w-full border-none bg-transparent text-xl font-medium outline-none placeholder:text-muted-foreground/50"
-          />
+        {/* Title and document type input */}
+        <div className="flex items-center justify-between border-b px-4 py-2">
+          <div className="flex flex-1 items-center">
+            <input
+              type="text"
+              value={documentTitle}
+              onChange={handleTitleChange}
+              placeholder="Untitled Document"
+              className="w-full border-none bg-transparent text-xl font-medium outline-none placeholder:text-muted-foreground/50"
+            />
+          </div>
+          <div className="ml-4 w-40">
+            <Select value={docType} onValueChange={handleDocumentTypeChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Document Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {DOCUMENT_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <MenuBar editor={editor} isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode} />
         {!isFocusMode && (
@@ -342,15 +397,31 @@ export function Editor({ content, onUpdate, isLoading = false, title = "", onTit
           ${isFocusMode ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}
         `}
       >
-        {/* Title input in focus mode */}
-        <div className="flex items-center border-b px-6 py-3">
-          <input
-            type="text"
-            value={documentTitle}
-            onChange={handleTitleChange}
-            placeholder="Untitled Document"
-            className="w-full border-none bg-transparent text-2xl font-medium outline-none placeholder:text-muted-foreground/50"
-          />
+        {/* Title and document type input in focus mode */}
+        <div className="flex items-center justify-between border-b px-6 py-3">
+          <div className="flex flex-1 items-center">
+            <input
+              type="text"
+              value={documentTitle}
+              onChange={handleTitleChange}
+              placeholder="Untitled Document"
+              className="w-full border-none bg-transparent text-2xl font-medium outline-none placeholder:text-muted-foreground/50"
+            />
+          </div>
+          <div className="ml-4 w-40">
+            <Select value={docType} onValueChange={handleDocumentTypeChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Document Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {DOCUMENT_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <MenuBar editor={editor} isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode} />
         {isFocusMode && (
