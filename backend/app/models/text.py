@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
@@ -10,6 +10,9 @@ class ActionRequest(BaseModel):
     about_me: str
     preferred_style: str
     tone: str
+    document_type: Optional[
+        Literal["Custom", "Blog", "Essay", "LinkedIn", "X", "Threads", "Reddit"]
+    ] = "Custom"
 
 
 class EvalRequest(BaseModel):

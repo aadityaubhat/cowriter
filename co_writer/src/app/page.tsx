@@ -63,6 +63,7 @@ interface HistoryItem {
   content: string;
   timestamp: number;
   lastModified: number;
+  document_type: string;
 }
 
 type Tab = 'write' | 'configure';
@@ -392,6 +393,7 @@ export default function Home() {
         content: '',
         timestamp: Date.now(),
         lastModified: Date.now(),
+        document_type: 'Custom',
       };
       setHistory([newItem]);
       setSelectedHistoryId(newId);
@@ -421,6 +423,7 @@ export default function Home() {
         content: '',
         timestamp: Date.now(),
         lastModified: Date.now(),
+        document_type: 'Custom',
       };
       setHistory([newItem]);
       setSelectedHistoryId(newId);
@@ -451,6 +454,7 @@ export default function Home() {
       content: '',
       timestamp: Date.now(),
       lastModified: Date.now(),
+      document_type: 'Custom',
     };
     setHistory([newItem, ...history]);
     setSelectedHistoryId(newId);
@@ -800,6 +804,29 @@ export default function Home() {
 
     setIsProcessing(true);
     try {
+      const selectedItem = history.find(item => item.id === selectedHistoryId);
+      const documentType = selectedItem?.document_type || 'Custom';
+
+      console.log(`Processing action with document type: ${documentType}`);
+
+      // Create a more specific action description based on document type
+      let actionDescription = '';
+      if (documentType === 'X') {
+        actionDescription = `${action.action} optimized for Twitter/X (under 280 characters, engaging, shareable)`;
+      } else if (documentType === 'LinkedIn') {
+        actionDescription = `${action.action} formatted for a professional LinkedIn post`;
+      } else if (documentType === 'Blog') {
+        actionDescription = `${action.action} formatted as a blog post with proper structure`;
+      } else if (documentType === 'Essay') {
+        actionDescription = `${action.action} formatted as a formal essay`;
+      } else if (documentType === 'Threads') {
+        actionDescription = `${action.action} formatted as a Twitter/X thread with numbered points`;
+      } else if (documentType === 'Reddit') {
+        actionDescription = `${action.action} formatted for a Reddit post`;
+      } else {
+        actionDescription = `${action.action} for a ${documentType} format`;
+      }
+
       const response = await fetch('http://localhost:8000/api/submit_action', {
         method: 'POST',
         headers: {
@@ -807,11 +834,12 @@ export default function Home() {
         },
         body: JSON.stringify({
           action: action.name.toLowerCase(),
-          action_description: action.action,
+          action_description: actionDescription,
           text: editorContent,
           about_me: aboutMe,
           preferred_style: preferredStyle,
           tone: tone,
+          document_type: documentType,
         }),
       });
 
@@ -1148,13 +1176,43 @@ export default function Home() {
                                 onClick={e => e.stopPropagation()}
                                 className="flex-1"
                               >
-                                <Input
-                                  ref={titleInputRef}
-                                  value={editingTitle}
-                                  onChange={e => setEditingTitle(e.target.value)}
-                                  onBlur={() => handleTitleSubmit(item.id)}
-                                  className="h-6 bg-background px-1 py-0 text-sm"
-                                />
+                                <div className="flex items-center gap-2 px-4 pb-1 pt-3">
+                                  <div className="flex-1">
+                                    <Input
+                                      ref={titleInputRef}
+                                      value={editingTitle}
+                                      onChange={e => setEditingTitle(e.target.value)}
+                                      onBlur={() => handleTitleSubmit(item.id)}
+                                      className="rounded-none border-0 border-b border-border/40 px-1 py-1 text-lg font-medium focus-visible:border-primary focus-visible:ring-0"
+                                      aria-label="Document Title"
+                                    />
+                                  </div>
+                                  <div className="w-40">
+                                    <Select
+                                      value={item.document_type}
+                                      onValueChange={value => {
+                                        setHistory(prev =>
+                                          prev.map(i =>
+                                            i.id === item.id ? { ...i, document_type: value } : i
+                                          )
+                                        );
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-8">
+                                        <SelectValue placeholder="Document Type" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Custom">Custom</SelectItem>
+                                        <SelectItem value="Blog">Blog</SelectItem>
+                                        <SelectItem value="Essay">Essay</SelectItem>
+                                        <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                                        <SelectItem value="X">X</SelectItem>
+                                        <SelectItem value="Threads">Threads</SelectItem>
+                                        <SelectItem value="Reddit">Reddit</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
                               </form>
                             ) : (
                               <div className="truncate">{item.title}</div>
@@ -1234,17 +1292,47 @@ export default function Home() {
                 <div className="flex h-full flex-col">
                   {/* Document Title Input */}
                   {selectedHistoryId && (
-                    <div className="px-4 pb-1 pt-3">
-                      <Input
-                        value={history.find(item => item.id === selectedHistoryId)?.title || ''}
-                        onChange={e => {
-                          const newTitle = e.target.value;
-                          handleRenameDocument(selectedHistoryId, newTitle);
-                        }}
-                        placeholder="Document Title"
-                        className="rounded-none border-0 border-b border-border/40 px-1 py-1 text-lg font-medium focus-visible:border-primary focus-visible:ring-0"
-                        aria-label="Document Title"
-                      />
+                    <div className="flex items-center gap-2 px-4 pb-1 pt-3">
+                      <div className="flex-1">
+                        <Input
+                          value={history.find(item => item.id === selectedHistoryId)?.title || ''}
+                          onChange={e => {
+                            const newTitle = e.target.value;
+                            handleRenameDocument(selectedHistoryId, newTitle);
+                          }}
+                          placeholder="Document Title"
+                          className="rounded-none border-0 border-b border-border/40 px-1 py-1 text-lg font-medium focus-visible:border-primary focus-visible:ring-0"
+                          aria-label="Document Title"
+                        />
+                      </div>
+                      <div className="w-40">
+                        <Select
+                          value={
+                            history.find(item => item.id === selectedHistoryId)?.document_type ||
+                            'Custom'
+                          }
+                          onValueChange={value => {
+                            setHistory(prev =>
+                              prev.map(i =>
+                                i.id === selectedHistoryId ? { ...i, document_type: value } : i
+                              )
+                            );
+                          }}
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder="Document Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Custom">Custom</SelectItem>
+                            <SelectItem value="Blog">Blog</SelectItem>
+                            <SelectItem value="Essay">Essay</SelectItem>
+                            <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                            <SelectItem value="X">X</SelectItem>
+                            <SelectItem value="Threads">Threads</SelectItem>
+                            <SelectItem value="Reddit">Reddit</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   )}
                   <div className="flex-1">
