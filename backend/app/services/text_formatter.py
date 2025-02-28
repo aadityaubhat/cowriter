@@ -1,59 +1,128 @@
 from app.models.text import ActionRequest, EvalRequest
 
 
+def _get_document_type_guidance(document_type: str) -> str:
+    """Get the guidance text for a specific document type."""
+    if document_type == "X":
+        return """
+Document Type: X (Twitter)
+STRICT REQUIREMENT: The response MUST be 280 characters or less.
+X (Twitter) posts are extremely short. Use concise language, abbreviations when appropriate.
+Include 1-2 relevant hashtags only if space permits. DO NOT exceed 280 characters under any circumstances.
+If the original content is too long, focus on the most impactful point only.
+Character limits are ABSOLUTE - your ENTIRE response must be under 280 characters including spaces and punctuation."""
+    elif document_type == "LinkedIn":
+        return """
+Document Type: LinkedIn
+LinkedIn is a professional network. Content should be business-appropriate and professional.
+Typical LinkedIn posts are 1-3 paragraphs. For longer content, use clear formatting and headlines.
+Focus on professional insights, career development, industry trends, or thought leadership.
+Avoid overly promotional language. Include a call-to-action when appropriate."""
+    elif document_type == "Threads":
+        return """
+Document Type: Threads
+STRICT REQUIREMENT: The response MUST be 500 characters or less.
+Threads posts are concise and conversational. Can be part of a sequence of related posts.
+Visual, engaging, and personal tone works well. Keep paragraphs very short.
+Focus on clarity and engagement rather than formal structure.
+Character limits are ABSOLUTE - your ENTIRE response must be under 500 characters including spaces and punctuation."""
+    elif document_type == "Reddit":
+        return """
+Document Type: Reddit
+Reddit allows longer form content. Format for readability with paragraphs, headers, and bullet points.
+Consider the informational, discussion-oriented nature of Reddit. Include relevant information and context.
+Use a conversational but clear tone. Structure with clear points for engagement and discussion.
+Avoid marketing language, as Reddit users respond poorly to obvious promotion."""
+    elif document_type == "Blog":
+        return """
+Document Type: Blog
+Blogs are structured content with clear sections, headers, and an engaging flow.
+Include an attention-grabbing introduction, well-organized body content, and a conclusion.
+Use varied sentence structure, engaging storytelling, and visual elements like lists and quotes.
+Aim for depth and value to the reader, with appropriate SEO considerations."""
+    elif document_type == "Essay":
+        return """
+Document Type: Essay
+Essays are formal, structured pieces with clear thesis, supporting arguments, and conclusion.
+Maintain logical flow and coherent structure throughout. Use transitions between paragraphs.
+Support claims with evidence or reasoning. Maintain a formal academic tone if appropriate.
+End with a strong conclusion that reinforces the main points or thesis."""
+    elif document_type != "Custom":
+        return f"""
+Document Type: {document_type}
+This content is intended for {document_type}. Please ensure your modifications are appropriate for this platform/format,
+following its typical style, length constraints, and engagement patterns."""
+    return ""
+
+
+def _get_character_count_warning(document_type: str) -> str:
+    """Get character count warning based on document type."""
+    if document_type == "X":
+        return """
+CRITICAL: THE LENGTH LIMIT IS 280 CHARACTERS FOR X (TWITTER) POSTS. COUNT YOUR CHARACTERS CAREFULLY.
+Your final output MUST be 280 characters or fewer.
+If your draft exceeds this limit, aggressively condense until it fits the 280 character limit.
+This is not a suggestion but a hard requirement."""
+    elif document_type == "Threads":
+        return """
+CRITICAL: THE LENGTH LIMIT IS 500 CHARACTERS FOR THREADS POSTS. COUNT YOUR CHARACTERS CAREFULLY.
+Your final output MUST be 500 characters or fewer.
+If your draft exceeds this limit, aggressively condense until it fits the 500 character limit.
+This is not a suggestion but a hard requirement."""
+    return ""
+
+
 def format_action_prompt(request: ActionRequest) -> str:
     """Format the prompt with user context and preferences."""
+    document_type_guidance = ""
 
-    # Add specific formatting guidelines based on document type
-    document_type_guidelines = {
-        "X": "- Keep it under 280 characters\n- Use hashtags sparingly\n- Make it engaging and shareable",
-        "LinkedIn": "- Use professional language\n- Include industry-relevant insights\n- Format for readability with short paragraphs",
-        "Blog": "- Use engaging headings and subheadings\n- Include an introduction and conclusion\n- Break up text with bullet points where appropriate",
-        "Essay": "- Maintain a clear thesis and structure\n- Use formal academic language\n- Include proper citations if referencing external content",
-        "Threads": "- Break content into numbered points\n- Keep each point concise\n- Use a conversational tone",
-        "Reddit": "- Use a conversational, authentic tone\n- Format with paragraphs and bullet points for readability\n- Consider the subreddit culture in your writing style",
-        "Custom": "- Focus on clarity and readability\n- Use appropriate formatting for the content type",
-    }
+    if request.document_type:
+        document_type_guidance = _get_document_type_guidance(request.document_type)
 
-    # Get the document type, defaulting to "Custom" if None
-    document_type = request.document_type or "Custom"
+    # Create a modified formatting guide based on document type
+    formatting_guide = """Format your response using Markdown:  # noqa: E501
+- Use # for main headings
+- Use ## for subheadings
+- Use **bold** for emphasis
+- Use *italic* for subtle emphasis
+- Use bullet points where appropriate
+- Use numbered lists for sequential items
+- Use > for quotes or important callouts"""
 
-    # Get the guidelines for the selected document type
-    type_guidelines = document_type_guidelines.get(
-        document_type, document_type_guidelines["Custom"]
-    )
+    # For X/Twitter and Threads, simplify the formatting guide to discourage complex formatting
+    if request.document_type in ["X", "Threads"]:
+        formatting_guide = """Keep formatting minimal and appropriate for short-form content."""
 
-    return f"""You are a professional writing assistant. Your task is to modify the text according to the user's requirements.
+    # Add specific character count validation instructions
+    character_count_warning = ""
+    if request.document_type:
+        character_count_warning = _get_character_count_warning(request.document_type)
 
-CONTEXT (FOR YOUR UNDERSTANDING ONLY - DO NOT INCLUDE IN RESPONSE):
-- User Background: {request.about_me}
-- Style Preference: {request.preferred_style}
-- Tone Preference: {request.tone}
-- Document Type: {document_type}
-- Task: {request.action_description}
+    return f"""As a writing assistant, please help modify the following text according to the specified requirements.  # noqa: E501
 
-SPECIFIC GUIDELINES FOR {document_type.upper()} FORMAT:
-{type_guidelines}
+User Background:
+{request.about_me}
 
-ORIGINAL TEXT:
+Writing Preferences:
+- Style: {request.preferred_style}
+- Tone: {request.tone}
+{document_type_guidance}
+
+Task: {request.action_description}
+
+Original Text:
 {request.text}
 
-INSTRUCTIONS:
-1. Modify the text according to the task description
-2. Adapt it specifically for {document_type} format
-3. Use the user's preferred style ({request.preferred_style}) and tone ({request.tone})
-4. Format appropriately using Markdown
+{formatting_guide}
+{character_count_warning}
 
-YOUR RESPONSE MUST:
-- ONLY contain the modified text
-- NOT include any explanations or comments
-- NOT include phrases like "Here's the modified text" or similar
-- NOT include any of the context information provided above
-- NOT include the original prompt or instructions
-- START IMMEDIATELY with the modified content
 
-IMPORTANT: I will use your response exactly as provided, so do not include ANY text other than the modified content.
-"""  # noqa: E501
+
+
+
+
+
+Return ONLY the modified text with appropriate formatting. Do not include any other text, comments, or explanations."""  # noqa: E501
 
 
 def format_eval_prompt(request: EvalRequest) -> str:
