@@ -8,9 +8,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronUp, Edit2, Plus, FileText, X as XIcon } from 'lucide-react';
+import { ChevronUp, Edit2, Plus, FileText, X as XIcon, AlertTriangle } from 'lucide-react';
 import { HistoryItem, DocumentType } from '@/types';
 import { getDocumentTypeIcon } from '@/utils/documentIcons';
+import { isLocalStorageAvailable } from '@/utils/helpers';
 
 interface HistorySidebarProps {
   history: HistoryItem[];
@@ -38,6 +39,12 @@ export function HistorySidebar({
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const [storageAvailable, setStorageAvailable] = useState(true);
+
+  // Check if localStorage is available
+  useEffect(() => {
+    setStorageAvailable(isLocalStorageAvailable());
+  }, []);
 
   // Focus input when editing starts
   useEffect(() => {
@@ -91,6 +98,18 @@ export function HistorySidebar({
 
         {isHistoryOpen && (
           <>
+            {!storageAvailable && (
+              <div className="m-2 rounded-md border border-yellow-500/50 bg-yellow-500/10 p-2 text-xs text-yellow-600">
+                <div className="flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span className="font-medium">Warning:</span>
+                </div>
+                <p className="mt-1">
+                  Local storage is not available. Your documents won&apos;t be saved when you close
+                  the browser.
+                </p>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto p-2">
               <Button
                 variant="ghost"
@@ -225,7 +244,9 @@ export function HistorySidebar({
               ))}
             </div>
             <div className="border-t border-border/40 p-2 text-center text-xs text-muted-foreground/70">
-              History is stored in your browser
+              {storageAvailable
+                ? 'History is stored in your browser'
+                : 'History storage unavailable'}
             </div>
           </>
         )}

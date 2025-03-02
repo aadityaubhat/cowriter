@@ -20,26 +20,61 @@ export const extractScoreFromResult = (result: string): number => {
   return 5;
 };
 
+// Check if localStorage is available and working
+export const isLocalStorageAvailable = (): boolean => {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    // Try to set and get a test item
+    const testKey = '_test_localStorage_';
+    localStorage.setItem(testKey, 'test');
+    const result = localStorage.getItem(testKey);
+    localStorage.removeItem(testKey);
+
+    // Check if the test was successful
+    return result === 'test';
+  } catch (e) {
+    return false;
+  }
+};
+
 // Load history from localStorage
 export const loadHistory = (): HistoryItem[] => {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined' || !isLocalStorageAvailable()) return [];
 
-  const savedHistory = localStorage.getItem('cowriter_history');
-  if (savedHistory) {
-    return JSON.parse(savedHistory);
+  try {
+    const savedHistory = localStorage.getItem('cowriter_history');
+    if (savedHistory) {
+      const parsedHistory = JSON.parse(savedHistory);
+      // Validate that we have an array of history items
+      if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
+        return parsedHistory;
+      }
+    }
+    return [];
+  } catch (error) {
+    console.error('Error loading history from localStorage:', error);
+    return [];
   }
-  return [];
 };
 
 // Save history to localStorage
 export const saveHistory = (history: HistoryItem[]): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('cowriter_history', JSON.stringify(history));
+  if (typeof window === 'undefined' || !isLocalStorageAvailable()) return;
+
+  try {
+    // Only save if we have valid history items
+    if (Array.isArray(history) && history.length > 0) {
+      localStorage.setItem('cowriter_history', JSON.stringify(history));
+    }
+  } catch (error) {
+    console.error('Error saving history to localStorage:', error);
+  }
 };
 
 // Load configuration from localStorage
 export const loadConfig = () => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined' || !isLocalStorageAvailable()) return null;
 
   const savedConfig = localStorage.getItem('cowriter_config');
   if (savedConfig) {
@@ -50,19 +85,23 @@ export const loadConfig = () => {
 
 // Save configuration to localStorage
 export const saveConfig = (config: Record<string, unknown>): void => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || !isLocalStorageAvailable()) return;
   localStorage.setItem('cowriter_config', JSON.stringify(config));
 };
 
-// Create a new document
+// Create a new document with a guaranteed unique ID
 export const createNewDocument = (): HistoryItem => {
-  const newId = Date.now().toString();
+  // Generate a unique ID using timestamp + random string
+  const timestamp = Date.now();
+  const randomStr = Math.random().toString(36).substring(2, 10);
+  const newId = `${timestamp}-${randomStr}`;
+
   return {
     id: newId,
     title: 'Untitled Document',
     content: '',
-    timestamp: Date.now(),
-    lastModified: Date.now(),
+    timestamp: timestamp,
+    lastModified: timestamp,
     document_type: 'Custom',
   };
 };

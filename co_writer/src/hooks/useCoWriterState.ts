@@ -57,28 +57,50 @@ export function useCoWriterState() {
 
   // Load history from localStorage on mount and ensure current document
   useEffect(() => {
-    const savedHistory = loadHistory();
+    try {
+      const savedHistory = loadHistory();
 
-    if (savedHistory.length > 0) {
-      setHistory(savedHistory);
+      if (savedHistory.length > 0) {
+        setHistory(savedHistory);
 
-      // Select the most recently modified document
-      const mostRecent = savedHistory.reduce((prev, current) =>
-        current.lastModified > prev.lastModified ? current : prev
-      );
-      setSelectedHistoryId(mostRecent.id);
-      setEditorContent(mostRecent.content);
-    } else {
-      // If no history, create a new document
+        // Select the most recently modified document
+        const mostRecent = savedHistory.reduce((prev, current) =>
+          current.lastModified > prev.lastModified ? current : prev
+        );
+
+        // Ensure the document has a valid ID
+        if (mostRecent && mostRecent.id) {
+          setSelectedHistoryId(mostRecent.id);
+          setEditorContent(mostRecent.content || '');
+        } else {
+          // If the most recent document is invalid, create a new one
+          const newDocument = createNewDocument();
+          setHistory([newDocument]);
+          setSelectedHistoryId(newDocument.id);
+          setEditorContent('');
+        }
+      } else {
+        // If no history, create a new document
+        const newDocument = createNewDocument();
+        setHistory([newDocument]);
+        setSelectedHistoryId(newDocument.id);
+        setEditorContent('');
+      }
+    } catch (error) {
+      console.error('Error loading document history:', error);
+      // Fallback to a new document if there's an error
       const newDocument = createNewDocument();
       setHistory([newDocument]);
       setSelectedHistoryId(newDocument.id);
+      setEditorContent('');
     }
   }, []);
 
   // Save history to localStorage whenever it changes
   useEffect(() => {
-    saveHistory(history);
+    if (history.length > 0) {
+      saveHistory(history);
+    }
   }, [history]);
 
   // Load configuration from localStorage
@@ -115,14 +137,29 @@ export function useCoWriterState() {
 
   // Save current document to history
   useEffect(() => {
-    if (selectedHistoryId && editorContent) {
-      setHistory(prev =>
-        prev.map(item =>
-          item.id === selectedHistoryId
-            ? { ...item, content: editorContent, lastModified: Date.now() }
-            : item
-        )
-      );
+    if (selectedHistoryId && editorContent !== undefined) {
+      // Debounce the update to avoid excessive localStorage writes
+      const updateTimer = setTimeout(() => {
+        setHistory(prev => {
+          // Find the current document in history
+          const currentIndex = prev.findIndex(item => item.id === selectedHistoryId);
+
+          // If document exists, update it
+          if (currentIndex >= 0) {
+            const updatedHistory = [...prev];
+            updatedHistory[currentIndex] = {
+              ...updatedHistory[currentIndex],
+              content: editorContent,
+              lastModified: Date.now(),
+            };
+            return updatedHistory;
+          }
+          return prev;
+        });
+      }, 500); // 500ms debounce
+
+      // Cleanup timer on unmount or when dependencies change
+      return () => clearTimeout(updateTimer);
     }
   }, [editorContent, selectedHistoryId]);
 
