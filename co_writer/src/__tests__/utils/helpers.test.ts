@@ -67,16 +67,17 @@ describe('localStorage helper functions', () => {
       saveHistory(testHistory);
 
       // Verify localStorage.setItem was called with the correct arguments
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        'cowriter_history',
-        JSON.stringify(testHistory)
+      const setItemCalls = localStorageMock.setItem.mock.calls.filter(
+        call => call[0] === 'history'
       );
+      expect(setItemCalls.length).toBe(1);
+      expect(setItemCalls[0][1]).toBe(JSON.stringify(testHistory));
 
       // Load history
       const loadedHistory = loadHistory();
 
       // Verify localStorage.getItem was called
-      expect(localStorageMock.getItem).toHaveBeenCalledWith('cowriter_history');
+      expect(localStorageMock.getItem).toHaveBeenCalledWith('history');
 
       // Verify the loaded history matches the saved history
       expect(loadedHistory).toEqual(testHistory);
@@ -112,37 +113,62 @@ describe('localStorage helper functions', () => {
   describe('loadConfig and saveConfig', () => {
     it('should save and load config correctly', () => {
       const testConfig = {
-        actions: [{ id: '1', name: 'Test Action' }],
+        actions: [
+          {
+            id: '1',
+            name: 'Test Action',
+            action: 'Test action description',
+            emoji: '🔹',
+          },
+        ],
         aboutMe: 'Test about me',
+        preferredStyle: 'Professional',
+        tone: 'Formal',
+        evals: [],
       };
 
       // Save config
       saveConfig(testConfig);
 
       // Verify localStorage.setItem was called with the correct arguments
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        'cowriter_config',
-        JSON.stringify(testConfig)
-      );
+      const setItemCalls = localStorageMock.setItem.mock.calls.filter(call => call[0] === 'config');
+      expect(setItemCalls.length).toBe(1);
+      expect(setItemCalls[0][1]).toBe(JSON.stringify(testConfig));
 
       // Load config
       const loadedConfig = loadConfig();
 
       // Verify localStorage.getItem was called
-      expect(localStorageMock.getItem).toHaveBeenCalledWith('cowriter_config');
+      expect(localStorageMock.getItem).toHaveBeenCalledWith('config');
 
       // Verify the loaded config matches the saved config
       expect(loadedConfig).toEqual(testConfig);
     });
 
-    it('should return null when no config is saved', () => {
+    it('should return default config when no config is saved', () => {
+      // Clear any previous calls and localStorage
+      jest.clearAllMocks();
+      localStorageMock.clear();
+
       const loadedConfig = loadConfig();
-      expect(loadedConfig).toBeNull();
+      expect(loadedConfig).toHaveProperty('actions');
+      expect(loadedConfig).toHaveProperty('evals');
+      expect(loadedConfig).toHaveProperty('aboutMe', '');
+      expect(loadedConfig).toHaveProperty('preferredStyle', 'Professional');
+      expect(loadedConfig).toHaveProperty('tone', 'Formal');
     });
   });
 
   describe('createNewDocument', () => {
     it('should create a document with a unique ID', () => {
+      // Mock the selectedDocumentTypes in localStorage to return 'Custom'
+      localStorageMock.getItem.mockImplementation(key => {
+        if (key === 'selectedDocumentTypes') {
+          return JSON.stringify(['Custom']);
+        }
+        return null;
+      });
+
       const doc1 = createNewDocument();
       const doc2 = createNewDocument();
 

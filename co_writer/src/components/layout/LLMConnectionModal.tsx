@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -17,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LLMConfig } from '@/types';
+import { Server, Key, AlertCircle } from 'lucide-react';
 
 interface LLMConnectionModalProps {
   isConnecting: boolean;
@@ -58,18 +60,26 @@ export function LLMConnectionModal({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" disabled={isConnecting}>
+        <Button
+          variant="outline"
+          disabled={isConnecting}
+          className="gap-2 border-2 transition-all hover:shadow-sm"
+        >
+          <Server className="h-4 w-4" />
           {isConnecting ? 'Connecting...' : llmConfig.type ? 'Update Connection' : 'Connect Now'}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Connect to LLM</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Server className="h-5 w-5 text-primary" />
+            Connect to LLM
+          </DialogTitle>
           <DialogDescription>
             Choose your LLM provider and enter the required credentials.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-5 py-4">
           <div className="grid gap-2">
             <label className="text-sm font-medium">LLM Provider</label>
             <Select
@@ -79,7 +89,7 @@ export function LLMConnectionModal({
                 setError(null);
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="border-2 focus:ring-1">
                 <SelectValue placeholder="Select LLM provider" />
               </SelectTrigger>
               <SelectContent>
@@ -91,11 +101,15 @@ export function LLMConnectionModal({
 
           {selectedLLM === 'openai' ? (
             <div className="grid gap-2">
-              <label className="text-sm font-medium">API Key</label>
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <Key className="h-4 w-4 text-muted-foreground" />
+                API Key
+              </label>
               <Input
                 type="password"
                 placeholder="Enter your OpenAI API key"
                 value={apiKey}
+                className="border-2 focus-visible:ring-1"
                 onChange={e => {
                   setApiKey(e.target.value);
                   setError(null);
@@ -109,6 +123,7 @@ export function LLMConnectionModal({
                 <Input
                   placeholder="Enter host"
                   value={host}
+                  className="border-2 focus-visible:ring-1"
                   onChange={e => {
                     setHost(e.target.value);
                     setError(null);
@@ -120,6 +135,7 @@ export function LLMConnectionModal({
                 <Input
                   placeholder="Enter port"
                   value={port}
+                  className="border-2 focus-visible:ring-1"
                   onChange={e => {
                     setPort(e.target.value);
                     setError(null);
@@ -128,10 +144,18 @@ export function LLMConnectionModal({
               </div>
             </>
           )}
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <Button onClick={handleConnect} disabled={isConnecting}>
-            {isConnecting ? 'Connecting...' : 'Connect'}
-          </Button>
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-500">
+              <AlertCircle className="h-4 w-4" />
+              {error}
+            </div>
+          )}
+          <DialogFooter className="mt-2">
+            <Button onClick={handleConnect} disabled={isConnecting} className="w-full gap-2">
+              <Server className="h-4 w-4" />
+              {isConnecting ? 'Connecting...' : 'Connect'}
+            </Button>
+          </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>

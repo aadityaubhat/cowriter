@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/select';
 import { HistoryItem, DocumentType } from '@/types';
 import { getDocumentTypeIcon } from '@/utils/documentIcons';
+import { useEffect, useState } from 'react';
+import { ALL_DOCUMENT_TYPES } from '@/utils/constants';
 
 interface DocumentEditorProps {
   selectedDocument: HistoryItem | null;
@@ -27,6 +29,52 @@ export function DocumentEditor({
   onRenameDocument,
   onUpdateDocumentType,
 }: DocumentEditorProps) {
+  // State to store available document types from configuration - initialize with empty array
+  const [availableDocTypes, setAvailableDocTypes] = useState<DocumentType[]>([]);
+
+  // Load available document types from localStorage
+  useEffect(() => {
+    console.log('DocumentEditor: Loading document types from storage');
+    const savedDocTypes = localStorage.getItem('selectedDocumentTypes');
+    console.log('DocumentEditor: Saved document types:', savedDocTypes);
+    if (savedDocTypes) {
+      try {
+        const parsedTypes = JSON.parse(savedDocTypes) as DocumentType[];
+        console.log('DocumentEditor: Parsed document types:', parsedTypes);
+        if (parsedTypes.length > 0) {
+          setAvailableDocTypes(parsedTypes);
+          console.log('DocumentEditor: Set available document types to:', parsedTypes);
+        } else {
+          // If empty array, set default to all document types
+          setAvailableDocTypes(ALL_DOCUMENT_TYPES);
+          console.log('DocumentEditor: Empty array, set to ALL_DOCUMENT_TYPES');
+        }
+      } catch (error) {
+        console.error('DocumentEditor: Error parsing saved document types:', error);
+        // If error, set default to all document types
+        setAvailableDocTypes(ALL_DOCUMENT_TYPES);
+        console.log('DocumentEditor: Error parsing, set to ALL_DOCUMENT_TYPES');
+      }
+    } else {
+      // If no saved types, set default to all document types
+      setAvailableDocTypes(ALL_DOCUMENT_TYPES);
+      console.log('DocumentEditor: No saved types, set to ALL_DOCUMENT_TYPES');
+    }
+
+    // Add event listener for custom docTypesChanged event
+    const handleDocTypesChanged = (e: CustomEvent) => {
+      console.log('DocumentEditor: Received docTypesChanged event:', e.detail.types);
+      setAvailableDocTypes(e.detail.types);
+    };
+
+    window.addEventListener('docTypesChanged', handleDocTypesChanged as EventListener);
+
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('docTypesChanged', handleDocTypesChanged as EventListener);
+    };
+  }, []);
+
   if (!selectedDocument) {
     return (
       <div className="flex h-full flex-col items-center justify-center">
@@ -34,6 +82,15 @@ export function DocumentEditor({
       </div>
     );
   }
+
+  // If the current document type is not in available types, default to the first available
+  const currentDocType = selectedDocument.document_type;
+  const isCurrentTypeAvailable = availableDocTypes.includes(currentDocType);
+
+  // Log the current document type and available types
+  console.log('Current document type:', currentDocType);
+  console.log('Is current type available:', isCurrentTypeAvailable);
+  console.log('Available document types:', availableDocTypes);
 
   return (
     <div className="flex h-full flex-col">
@@ -54,8 +111,9 @@ export function DocumentEditor({
           </div>
           <div className="ml-2">
             <Select
-              value={selectedDocument.document_type}
+              value={currentDocType}
               onValueChange={value => {
+                console.log('Document type changed to:', value);
                 onUpdateDocumentType(selectedDocument.id, value as DocumentType);
               }}
             >
@@ -63,34 +121,24 @@ export function DocumentEditor({
                 <SelectValue placeholder="Document Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Custom" className="flex items-center">
-                  {getDocumentTypeIcon('Custom', true)}
-                  <span>Custom</span>
-                </SelectItem>
-                <SelectItem value="Blog" className="flex items-center">
-                  {getDocumentTypeIcon('Blog', true)}
-                  <span>Blog</span>
-                </SelectItem>
-                <SelectItem value="Essay" className="flex items-center">
-                  {getDocumentTypeIcon('Essay', true)}
-                  <span>Essay</span>
-                </SelectItem>
-                <SelectItem value="LinkedIn" className="flex items-center">
-                  {getDocumentTypeIcon('LinkedIn', true)}
-                  <span>LinkedIn</span>
-                </SelectItem>
-                <SelectItem value="X" className="flex items-center">
-                  {getDocumentTypeIcon('X', true)}
-                  <span>X</span>
-                </SelectItem>
-                <SelectItem value="Threads" className="flex items-center">
-                  {getDocumentTypeIcon('Threads', true)}
-                  <span>Threads</span>
-                </SelectItem>
-                <SelectItem value="Reddit" className="flex items-center">
-                  {getDocumentTypeIcon('Reddit', true)}
-                  <span>Reddit</span>
-                </SelectItem>
+                {/* Show current document type first if not in available types */}
+                {!isCurrentTypeAvailable && (
+                  <SelectItem
+                    key={currentDocType}
+                    value={currentDocType}
+                    className="flex items-center"
+                  >
+                    {getDocumentTypeIcon(currentDocType, true)}
+                    <span>{currentDocType}</span>
+                  </SelectItem>
+                )}
+                {/* Then show all available document types */}
+                {availableDocTypes.map(type => (
+                  <SelectItem key={type} value={type} className="flex items-center">
+                    {getDocumentTypeIcon(type, true)}
+                    <span>{type}</span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

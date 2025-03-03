@@ -1,4 +1,4 @@
-import { ActionButton, EvalItem } from '@/types';
+import { ActionButton, EvalItem, LLMConfig, DocumentType } from '@/types';
 
 export const DEFAULT_ACTIONS: ActionButton[] = [
   { id: '1', name: 'Expand', action: 'Expand the text while maintaining the context', emoji: '✨' },
@@ -36,3 +36,13 @@ export const DEFAULT_CONFIG = {
 };
 
 export const WELCOME_MESSAGE = "Hello! I'm Co Writer. How can I help you today?";
+
+export const ALL_DOCUMENT_TYPES: DocumentType[] = [
+  'Blog',
+  'Essay',
+  'LinkedIn',
+  'X',
+  'Threads',
+  'Reddit',
+  'Custom',
+];

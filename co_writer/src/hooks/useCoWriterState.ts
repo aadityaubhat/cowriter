@@ -8,7 +8,13 @@ import {
   DocumentType,
   Tab,
 } from '@/types';
-import { DEFAULT_ACTIONS, DEFAULT_EVALS, DEFAULT_CONFIG, WELCOME_MESSAGE } from '@/utils/constants';
+import {
+  DEFAULT_ACTIONS,
+  DEFAULT_EVALS,
+  DEFAULT_CONFIG,
+  WELCOME_MESSAGE,
+  ALL_DOCUMENT_TYPES,
+} from '@/utils/constants';
 import {
   loadHistory,
   saveHistory,
@@ -58,6 +64,15 @@ export function useCoWriterState() {
   // Load history from localStorage on mount and ensure current document
   useEffect(() => {
     try {
+      // First, ensure document types are initialized
+      const savedDocTypes = localStorage.getItem('selectedDocumentTypes');
+      if (!savedDocTypes) {
+        console.log(
+          'useCoWriterState: No saved document types, initializing with ALL_DOCUMENT_TYPES'
+        );
+        localStorage.setItem('selectedDocumentTypes', JSON.stringify(ALL_DOCUMENT_TYPES));
+      }
+
       const savedHistory = loadHistory();
 
       if (savedHistory.length > 0) {
@@ -301,7 +316,9 @@ export function useCoWriterState() {
 
       // Update the eval item with the score and result
       setEvals(prevEvals =>
-        prevEvals.map(e => (e.id === evalItem.id ? { ...e, score, result: data.result } : e))
+        prevEvals.map(e =>
+          e.id === evalItem.id ? { ...e, score: score ?? undefined, result: data.result } : e
+        )
       );
     } catch (error) {
       console.error('Eval processing failed:', error);
@@ -361,6 +378,17 @@ export function useCoWriterState() {
     }
   };
 
+  const handleTabChange = (tab: Tab) => {
+    console.log('Tab changed to:', tab);
+    setActiveTab(tab);
+
+    // If switching to configure tab, dispatch an event to refresh document types
+    if (tab === 'configure') {
+      console.log('Dispatching configureTabActive event');
+      window.dispatchEvent(new CustomEvent('configureTabActive'));
+    }
+  };
+
   return {
     // State
     activeTab,
@@ -398,5 +426,6 @@ export function useCoWriterState() {
     handleEvalClick,
     handleSendMessage,
     handleResetConfig,
+    handleTabChange,
   };
 }
