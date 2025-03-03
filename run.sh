@@ -65,7 +65,7 @@ done
 
 # Start frontend service
 echo "Starting frontend service..."
-cd co_writer
+cd cowriter
 npm install --omit=dev  # Install only production dependencies
 npm run dev &
 frontend_pid=$!

@@ -10,11 +10,11 @@ command -v poetry >/dev/null 2>&1 || { echo "Poetry is required but not installe
 
 # Create necessary directories
 mkdir -p backend
-mkdir -p co_writer
+mkdir -p cowriter
 
 # Frontend setup
 echo "Setting up frontend..."
-cd co_writer
+cd cowriter
 echo "Installing frontend dependencies..."
 # Use legacy-peer-deps as a fallback if the first attempt fails
 npm install || npm install --legacy-peer-deps
@@ -37,7 +37,7 @@ cat > ../.git/hooks/pre-commit << 'EOF'
 #!/bin/bash
 
 # Frontend checks
-cd co_writer
+cd cowriter
 echo "Running frontend checks..."
 npm run lint || exit 1
 npm run format:check || exit 1
@@ -70,27 +70,27 @@ EOF
 fi
 
 # Create frontend environment file
-if [ ! -f co_writer/.env ]; then
-    echo "Creating co_writer/.env..."
-    mkdir -p co_writer
-    cat > co_writer/.env << 'EOF'
+if [ ! -f cowriter/.env ]; then
+    echo "Creating cowriter/.env..."
+    mkdir -p cowriter
+    cat > cowriter/.env << 'EOF'
 # Frontend Environment Variables
 NEXT_PUBLIC_API_URL=http://localhost:8000
 EOF
-    echo "Created co_writer/.env"
+    echo "Created cowriter/.env"
 fi
 
 echo "Setup complete! Please configure your environment variables in:"
 echo "- backend/.env"
-echo "- co_writer/.env"
+echo "- cowriter/.env"
 echo ""
 echo "Note: Some linting errors were found. You can fix them by running:"
 echo "Frontend:"
-echo "cd co_writer && npm run lint --fix"
-echo "cd co_writer && npm run format"
+echo "cd cowriter && npm run lint --fix"
+echo "cd cowriter && npm run format"
 echo ""
 echo "To start the development servers:"
-echo "1. Frontend: cd co_writer && npm run dev"
+echo "1. Frontend: cd cowriter && npm run dev"
 echo "2. Backend: cd backend && poetry run uvicorn app.main:app --reload"
 echo ""
 echo "Available commands:"

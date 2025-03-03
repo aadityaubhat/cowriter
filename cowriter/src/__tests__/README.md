@@ -1,6 +1,6 @@
-# Co_Writer Tests
+# CoWriter Tests
 
-This directory contains tests for the Co_Writer application, focusing on verifying the localStorage functionality.
+This directory contains tests for the CoWriter application, focusing on verifying the localStorage functionality.
 
 ## Test Structure
 

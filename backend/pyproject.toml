@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "co-writer-backend"
+name = "cowriter-backend"
 version = "0.1.0"
 description = "Backend for CoWriter application"
 authors = ["CoWriter Team <github@cowriter.ai>"]

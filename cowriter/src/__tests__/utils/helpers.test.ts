@@ -102,9 +102,9 @@ describe('localStorage helper functions', () => {
 
       saveHistory([]);
 
-      // Check if setItem was called with cowriter_history
+      // Check if setItem was called with history
       const cowriterHistoryCalls = localStorageMock.setItem.mock.calls.filter(
-        call => call[0] === 'cowriter_history'
+        call => call[0] === 'history'
       );
       expect(cowriterHistoryCalls.length).toBe(0);
     });

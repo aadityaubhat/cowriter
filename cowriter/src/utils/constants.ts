@@ -35,7 +35,7 @@ export const DEFAULT_CONFIG = {
   tone: 'Formal',
 };
 
-export const WELCOME_MESSAGE = "Hello! I'm Co Writer. How can I help you today?";
+export const WELCOME_MESSAGE = "Hello! I'm CoWriter. How can I help you today?";
 
 export const ALL_DOCUMENT_TYPES: DocumentType[] = [
   'Blog',

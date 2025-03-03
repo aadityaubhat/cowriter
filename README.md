@@ -29,7 +29,7 @@ CoWriter is an AI-powered writing assistant that helps you improve your writing 
   - Type-safe with mypy
   - Formatted with black and isort
   - Linted with flake8
-- `/co_writer` - Next.js frontend application
+- `/cowriter` - Next.js frontend application
   - Modern React with TypeScript
   - Beautiful UI with Tailwind CSS
   - Real-time editing with Tiptap
@@ -46,8 +46,8 @@ CoWriter is an AI-powered writing assistant that helps you improve your writing 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/co_writer.git
-   cd co_writer
+   git clone https://github.com/yourusername/cowriter.git
+   cd cowriter
    ```
 
 2. Run the setup script:
@@ -97,7 +97,7 @@ uvicorn app.main:app --reload --port 8000
 
 ### Frontend
 ```bash
-cd co_writer
+cd cowriter
 npm install  # Includes development dependencies
 npm run dev
 ```
@@ -115,7 +115,7 @@ poetry run mypy app/  # Type check
 
 Frontend:
 ```bash
-cd co_writer
+cd cowriter
 npm run lint  # Run ESLint
 npm run format  # Run Prettier
 npm run type-check  # Run TypeScript checks

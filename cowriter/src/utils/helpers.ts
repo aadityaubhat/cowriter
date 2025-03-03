@@ -33,6 +33,9 @@ export function loadHistory(): HistoryItem[] {
 export function saveHistory(history: HistoryItem[]) {
   if (!isLocalStorageAvailable()) return;
 
+  // Skip saving empty history arrays
+  if (history.length === 0) return;
+
   try {
     localStorage.setItem('history', JSON.stringify(history));
   } catch (error) {

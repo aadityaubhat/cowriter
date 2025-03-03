@@ -44,10 +44,10 @@ run_command() {
 
 # Frontend linting
 echo -e "\n${BLUE}=========================================${NC}"
-echo -e "${BLUE}   Frontend Linting (co_writer)         ${NC}"
+echo -e "${BLUE}   Frontend Linting (cowriter)         ${NC}"
 echo -e "${BLUE}=========================================${NC}"
 
-cd co_writer || { echo -e "${RED}Frontend directory not found. Aborting.${NC}" >&2; exit 1; }
+cd cowriter || { echo -e "${RED}Frontend directory not found. Aborting.${NC}" >&2; exit 1; }
 
 # Check if node_modules exists, if not install dependencies
 if [ ! -d "node_modules" ]; then
