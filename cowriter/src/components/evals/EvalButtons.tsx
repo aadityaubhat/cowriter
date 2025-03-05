@@ -18,6 +18,8 @@ interface EvalButtonsProps {
   isProcessing: boolean;
   isLLMConnected: boolean;
   onEvalClick: (evalItem: EvalItem) => void;
+  openEvalDialogId?: string | null;
+  onDialogOpenChange?: (id: string | null) => void;
 }
 
 export function EvalButtons({
@@ -25,8 +27,27 @@ export function EvalButtons({
   isProcessing,
   isLLMConnected,
   onEvalClick,
+  openEvalDialogId,
+  onDialogOpenChange,
 }: EvalButtonsProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [localOpenDialogId, setLocalOpenDialogId] = useState<string | null>(null);
+
+  const isDialogOpen = (evalId: string) => {
+    if (onDialogOpenChange) {
+      return openEvalDialogId === evalId;
+    } else {
+      return localOpenDialogId === evalId;
+    }
+  };
+
+  const handleDialogOpenChange = (evalId: string, open: boolean) => {
+    if (onDialogOpenChange) {
+      onDialogOpenChange(open ? evalId : null);
+    } else {
+      setLocalOpenDialogId(open ? evalId : null);
+    }
+  };
 
   return (
     <Card
@@ -75,9 +96,12 @@ export function EvalButtons({
                   </span>
                 </div>
 
-                {/* View details button */}
+                {/* View details button and dialog */}
                 {evalItem.result && (
-                  <Dialog>
+                  <Dialog
+                    open={isDialogOpen(evalItem.id)}
+                    onOpenChange={open => handleDialogOpenChange(evalItem.id, open)}
+                  >
                     <DialogTrigger asChild>
                       <Button
                         variant="ghost"

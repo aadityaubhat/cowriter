@@ -25,6 +25,7 @@ export default function Home() {
     isProcessing,
     isChatProcessing,
     messages,
+    openEvalDialogId,
 
     // Actions
     setIsHistoryOpen,
@@ -45,6 +46,7 @@ export default function Home() {
     handleSendMessage,
     handleResetConfig,
     handleTabChange,
+    handleDialogOpenChange,
   } = useCoWriterState();
 
   // Initialize document types when the app starts
@@ -119,6 +121,7 @@ export default function Home() {
           isChatProcessing={isChatProcessing}
           llmConfig={llmConfig}
           isConnecting={isConnecting}
+          openEvalDialogId={openEvalDialogId}
           onToggleHistory={() => setIsHistoryOpen(!isHistoryOpen)}
           onSelectHistory={setSelectedHistoryId}
           onNewDocument={handleNewDocument}
@@ -128,6 +131,7 @@ export default function Home() {
           onUpdateContent={setEditorContent}
           onActionClick={handleActionClick}
           onEvalClick={handleEvalClick}
+          onDialogOpenChange={handleDialogOpenChange}
           onSendMessage={handleSendMessage}
           onConnectLLM={handleLLMConnect}
         />

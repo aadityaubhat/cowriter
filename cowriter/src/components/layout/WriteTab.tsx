@@ -19,6 +19,7 @@ interface WriteTabProps {
   isChatProcessing: boolean;
   llmConfig: LLMConfig;
   isConnecting: boolean;
+  openEvalDialogId?: string | null;
   onToggleHistory: () => void;
   onSelectHistory: (id: string) => void;
   onNewDocument: () => void;
@@ -28,6 +29,7 @@ interface WriteTabProps {
   onUpdateContent: (content: string) => void;
   onActionClick: (action: ActionButton) => void;
   onEvalClick: (evalItem: EvalItem) => void;
+  onDialogOpenChange?: (id: string | null) => void;
   onSendMessage: (message: string) => void;
   onConnectLLM: (config: LLMConfig) => void;
 }
@@ -44,6 +46,7 @@ export function WriteTab({
   isChatProcessing,
   llmConfig,
   isConnecting,
+  openEvalDialogId,
   onToggleHistory,
   onSelectHistory,
   onNewDocument,
@@ -53,6 +56,7 @@ export function WriteTab({
   onUpdateContent,
   onActionClick,
   onEvalClick,
+  onDialogOpenChange,
   onSendMessage,
   onConnectLLM,
 }: WriteTabProps) {
@@ -108,6 +112,8 @@ export function WriteTab({
                 isProcessing={isProcessing}
                 isLLMConnected={!!llmConfig.type}
                 onEvalClick={onEvalClick}
+                openEvalDialogId={openEvalDialogId}
+                onDialogOpenChange={onDialogOpenChange}
               />
 
               {/* Chat */}

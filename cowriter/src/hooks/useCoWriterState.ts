@@ -38,6 +38,7 @@ export function useCoWriterState() {
   // Action and eval state
   const [actions, setActions] = useState<ActionButton[]>(DEFAULT_ACTIONS);
   const [evals, setEvals] = useState<EvalItem[]>(DEFAULT_EVALS);
+  const [openEvalDialogId, setOpenEvalDialogId] = useState<string | null>(null);
 
   // User preferences
   const [aboutMe, setAboutMe] = useState('');
@@ -320,6 +321,9 @@ export function useCoWriterState() {
           e.id === evalItem.id ? { ...e, score: score ?? undefined, result: data.result } : e
         )
       );
+
+      // Open the dialog to show the results
+      setOpenEvalDialogId(evalItem.id);
     } catch (error) {
       console.error('Eval processing failed:', error);
       const errorMessage =
@@ -389,6 +393,10 @@ export function useCoWriterState() {
     }
   };
 
+  const handleDialogOpenChange = (id: string | null) => {
+    setOpenEvalDialogId(id);
+  };
+
   return {
     // State
     activeTab,
@@ -406,6 +414,7 @@ export function useCoWriterState() {
     isProcessing,
     isChatProcessing,
     messages,
+    openEvalDialogId,
 
     // Actions
     setActiveTab,
@@ -427,5 +436,6 @@ export function useCoWriterState() {
     handleSendMessage,
     handleResetConfig,
     handleTabChange,
+    handleDialogOpenChange,
   };
 }
