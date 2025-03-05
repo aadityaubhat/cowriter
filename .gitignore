@@ -49,3 +49,11 @@ next-env.d.ts
 # Tailwind
 .turbo
 .vercel 
+
+# Deployment
+DEPLOYMENT.md
+vercel.json
+railway.json
+Procfile
+.vercel
+.railway

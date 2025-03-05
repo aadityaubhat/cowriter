@@ -62,4 +62,9 @@ logs/
 .env.production.local
 
 # Poetry
-poetry.lock 
+poetry.lock
+
+# Railway deployment
+railway.json
+Procfile
+.railway 
