@@ -11,7 +11,9 @@ class ActionRequest(BaseModel):
     preferred_style: str
     tone: str
     document_type: Optional[
-        Literal["Custom", "Blog", "Essay", "LinkedIn", "X", "Threads", "Reddit"]
+        Literal[
+            "Custom", "Blog", "Essay", "LinkedIn", "X", "Threads", "Reddit", "Email", "Newsletter"
+        ]
     ] = "Custom"
 
 

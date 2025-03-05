@@ -44,5 +44,7 @@ export const ALL_DOCUMENT_TYPES: DocumentType[] = [
   'X',
   'Threads',
   'Reddit',
+  'Email',
+  'Newsletter',
   'Custom',
 ];

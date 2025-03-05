@@ -45,6 +45,8 @@ const DOCUMENT_TYPE_DESCRIPTIONS: Record<DocumentType, string> = {
   X: 'Short-form content for X (Twitter)',
   Threads: "Content for Instagram's Threads platform",
   Reddit: 'Content for Reddit with clear points for discussion',
+  Email: 'Professional or personal email communications',
+  Newsletter: 'Engaging content for email newsletter subscribers',
   Custom: 'Custom document type with no specific format',
 };
 

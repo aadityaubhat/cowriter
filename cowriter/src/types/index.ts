@@ -38,4 +38,13 @@ export interface LLMConfig {
   port?: string;
 }
 
-export type DocumentType = 'Custom' | 'Blog' | 'Essay' | 'LinkedIn' | 'X' | 'Threads' | 'Reddit';
+export type DocumentType =
+  | 'Custom'
+  | 'Blog'
+  | 'Essay'
+  | 'LinkedIn'
+  | 'X'
+  | 'Threads'
+  | 'Reddit'
+  | 'Email'
+  | 'Newsletter';
