@@ -56,29 +56,45 @@ chmod +x ../.git/hooks/pre-commit
 
 echo "Creating environment files..."
 # Create backend environment file
-if [ ! -f backend/.env ]; then
+if [ ! -f ../backend/.env ]; then
     echo "Creating backend/.env..."
-    mkdir -p backend
-    cat > backend/.env << 'EOF'
+    cat > ../backend/.env << 'EOF'
 # Backend Environment Variables
 OPENAI_API_KEY=your_api_key_here
 MODEL_NAME=gpt-4-turbo-preview
 DEBUG=False
 ALLOWED_ORIGINS=http://localhost:3000  # Comma-separated list of allowed origins
 EOF
-    echo "Created backend/.env"
+    echo "✅ Created backend/.env"
+else
+    echo "⚠️ backend/.env already exists, skipping creation"
 fi
 
 # Create frontend environment file
-if [ ! -f cowriter/.env ]; then
+if [ ! -f ../cowriter/.env ]; then
     echo "Creating cowriter/.env..."
-    mkdir -p cowriter
-    cat > cowriter/.env << 'EOF'
+    cat > ../cowriter/.env << 'EOF'
 # Frontend Environment Variables
 NEXT_PUBLIC_API_URL=http://localhost:8000
 EOF
-    echo "Created cowriter/.env"
+    echo "✅ Created cowriter/.env"
+else
+    echo "⚠️ cowriter/.env already exists, skipping creation"
 fi
+
+# Verify that the frontend .env file contains the required variables
+if [ -f ../cowriter/.env ]; then
+    if ! grep -q "NEXT_PUBLIC_API_URL" ../cowriter/.env; then
+        echo "⚠️ Warning: NEXT_PUBLIC_API_URL is missing from cowriter/.env"
+        echo "Adding NEXT_PUBLIC_API_URL to cowriter/.env..."
+        echo "NEXT_PUBLIC_API_URL=http://localhost:8000" >> ../cowriter/.env
+        echo "✅ Added NEXT_PUBLIC_API_URL to cowriter/.env"
+    else
+        echo "✅ Verified NEXT_PUBLIC_API_URL exists in cowriter/.env"
+    fi
+fi
+
+cd ..
 
 echo "Setup complete! Please configure your environment variables in:"
 echo "- backend/.env"
