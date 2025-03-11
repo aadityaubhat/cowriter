@@ -20,6 +20,8 @@ import {
   FileDown,
   Quote,
   Strikethrough,
+  Undo,
+  Redo,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
@@ -181,6 +183,27 @@ const MenuBar = ({
         >
           <Strikethrough className="h-4 w-4" />
         </Button>
+        
+        <div className="mx-2 h-6 w-px bg-border" />
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().undo()}
+          className={`hover:bg-primary hover:text-primary-foreground disabled:opacity-50`}
+        >
+          <Undo className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().redo()}
+          className={`hover:bg-primary hover:text-primary-foreground disabled:opacity-50`}
+        >
+          <Redo className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="flex items-center gap-1 p-2">
@@ -203,6 +226,7 @@ const MenuBar = ({
           DOCX
         </Button>
         <div className="mx-2 h-6 w-px bg-border" />
+
         <Button
           variant="ghost"
           size="sm"
