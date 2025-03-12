@@ -183,9 +183,9 @@ const MenuBar = ({
         >
           <Strikethrough className="h-4 w-4" />
         </Button>
-        
+
         <div className="mx-2 h-6 w-px bg-border" />
-        
+
         <Button
           variant="ghost"
           size="sm"

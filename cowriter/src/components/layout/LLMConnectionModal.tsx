@@ -35,7 +35,7 @@ export function LLMConnectionModal({
     (llmConfig.type as 'openai' | 'llama') || 'openai'
   );
   const [apiKey, setApiKey] = useState(llmConfig.apiKey || '');
-  const [host, setHost] = useState(llmConfig.host || 'http://localhost');
+  const [host, setHost] = useState(llmConfig.host || 'http://host.docker.internal');
   const [port, setPort] = useState(llmConfig.port || '8080');
   const [error, setError] = useState<string | null>(null);
 
