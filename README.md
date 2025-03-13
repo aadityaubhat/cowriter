@@ -1,23 +1,29 @@
 # CoWriter
 
-CoWriter is an AI-powered writing assistant that helps you improve your writing through various actions like expanding, shortening, and critiquing text. It provides an intuitive interface for real-time writing enhancement.
+CoWriter is an AI-powered writing assistant that helps you improve your writing through various actions like expanding, shortening, and critiquing text. It provides an intuitive interface for real-time writing enhancement and content creation.
 
 ## Screenshots
 
 ![CoWriter Interface](.github/assets/CoWriterUI.png)
 *The main CoWriter interface with AI-powered writing assistance*
 
-## Video Demo
-[![CoWriter Demo Video](https://img.youtube.com/vi/XiomNY1v2J0/0.jpg)](https://youtu.be/XiomNY1v2J0)
-*Watch CoWriter in action*
-
 ## Features
 
-- **Text Expansion**: Elaborate on your ideas with AI-powered suggestions
-- **Text Shortening**: Make your writing more concise and impactful
-- **Writing Critique**: Get constructive feedback on your writing
-- **Custom Actions**: Define your own actions to help you write, e.g. Add Facts, Add Quotes, etc.
-- **Interactive Chat**: Engage in a conversation about your text
+- **Rich Text Editor**: Full-featured editor with formatting options (bold, italic, underline, headings)
+- **Document History**: Track and manage your document history with timestamps
+- **Multiple Document Types**: Support for various content types including Blog, Essay, LinkedIn, X (Twitter), Threads, Reddit, Email, and Newsletter
+- **AI Actions**:
+  - **Expand**: Elaborate on your ideas with AI-powered suggestions
+  - **Shorten**: Make your writing more concise and impactful
+  - **Critique**: Get constructive feedback on your writing
+  - **Custom Actions**: Define your own actions to help you write, e.g. Add Facts, Add Quotes, etc.
+- **Text Evaluation**:
+  - **Interesting**: Score how engaging your content is
+  - **Spammy**: Check if your content appears spammy
+  - **Clarity**: Evaluate how clear and understandable your writing is
+- **Interactive Chat**: Engage in a conversation about your text with the AI assistant
+- **Export Options**: Export your content as TXT or DOCX files
+- **Theme Support**: Light and dark mode for comfortable writing in any environment
 - **Modern UI**: Clean and intuitive interface built with Next.js
 - **Flexible AI Backend**: Support for both OpenAI and Llama models
 
@@ -26,6 +32,7 @@ CoWriter is an AI-powered writing assistant that helps you improve your writing 
 - `/backend` - FastAPI backend service
   - Python-based API with FastAPI
   - Support for OpenAI and Llama.cpp models
+  - PostgreSQL database for storing user data, documents, and preferences
   - Type-safe with mypy
   - Formatted with black and isort
   - Linted with flake8
@@ -41,6 +48,7 @@ CoWriter is an AI-powered writing assistant that helps you improve your writing 
 - Python 3.9+ for the backend
 - Poetry (Python package manager)
 - npm or yarn
+- PostgreSQL (for production use)
 
 ## Quick Start
 
@@ -127,6 +135,7 @@ When the backend is running, you can access:
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -145,3 +154,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Built with [Next.js](https://nextjs.org/)
 - Powered by [FastAPI](https://fastapi.tiangolo.com/)
+- Rich text editing with [Tiptap](https://tiptap.dev/)
