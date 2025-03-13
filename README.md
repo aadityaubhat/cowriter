@@ -4,7 +4,7 @@ CoWriter is an AI-powered writing assistant that helps you improve your writing 
 
 ## Screenshots
 
-![CoWriter Interface](.github/assets/CoWriterUI.png)
+![CoWriter Interface](.github/assets/CoWriter_write.png)
 *The main CoWriter interface with AI-powered writing assistance*
 
 ## Features
