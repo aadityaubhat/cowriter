@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cowriter_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/cowriter
+      - ASYNC_DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/cowriter
+      - EXTERNAL_HOST=host.docker.internal
+      - DEBUG=False
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cowriter_network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: cowriter_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=cowriter
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cowriter_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+networks:
+  cowriter_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

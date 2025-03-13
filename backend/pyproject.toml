@@ -13,6 +13,14 @@ uvicorn = {extras = ["standard"], version = "^0.34.0"}
 pydantic = "^2.10.6"
 openai = "^1.63.2"
 requests = "^2.32.3"
+sqlalchemy = "^2.0.29"
+psycopg2-binary = "^2.9.9"
+alembic = "^1.13.1"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.9"
+email-validator = "^2.1.1"
+asyncpg = "^0.29.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
@@ -51,6 +59,27 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
+disable_error_code = ["valid-type", "misc"]
+
+[[tool.mypy.overrides]]
+module = "app.models.*"
+disallow_subclassing_any = false
+
+[[tool.mypy.overrides]]
+module = "sqlalchemy.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sqlalchemy.orm.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sqlalchemy.ext.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sqlalchemy.dialects.*"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"
