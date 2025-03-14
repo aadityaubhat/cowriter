@@ -12,7 +12,15 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/cowriter
       - ASYNC_DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/cowriter
       - EXTERNAL_HOST=host.docker.internal
-      - DEBUG=False
+      - DEBUG=True
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug" ]
     depends_on:
       postgres:
         condition: service_healthy

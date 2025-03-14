@@ -1,70 +1,43 @@
-import os
-from typing import Any, Dict, List, Optional, Union, cast
-
-from pydantic import BaseModel, PostgresDsn, validator
+from pydantic import computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseModel):
-    """Application settings."""
-
-    # API settings
-    API_V1_STR: str = "/api"
-
-    # Debug mode
-    DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
-
-    # CORS settings
-    ALLOWED_ORIGINS: List[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
-
-    # OpenAI settings
-    OPENAI_DEFAULT_MODEL: str = "gpt-3.5-turbo"
-
-    # Llama settings
-    LLAMA_DEFAULT_MODEL: str = "Llama-3.2-3B-Instruct"
-    LLAMA_MAX_TOKENS: int = 50000
+class Settings(BaseSettings):
+    PROJECT_NAME: str = "FastAPI Template"
+    VERSION: str = "1.0.0"
+    API_PREFIX: str = "/api"
+    API_V1_STR: str = "/api/v1"
+    DEBUG: bool = False
 
     # Database settings
-    DATABASE_URL: Union[str, PostgresDsn] = os.getenv(
-        "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/cowriter"
-    )
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_HOST: str = "postgres"
+    POSTGRES_PORT: str = "5432"
+    POSTGRES_DB: str = "cowriter"
 
-    # Async database URL (derived from DATABASE_URL)
-    ASYNC_DATABASE_URL: Optional[PostgresDsn] = None
+    # JWT settings
+    SECRET_KEY: str = "your-secret-key"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # JWT settings for authentication
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    # Optional CORS settings
+    ALLOWED_ORIGINS: str = "http://localhost:3000"
 
-    @validator("DATABASE_URL", pre=True)
-    def validate_database_url(cls, v: Any) -> Union[str, PostgresDsn]:
-        """Validate database URL."""
-        if isinstance(v, str):
-            return v
+    # OpenAI settings
+    OPENAI_API_KEY: str = "your_openai_api_key_here"
 
-        user = os.getenv("POSTGRES_USER", "postgres")
-        password = os.getenv("POSTGRES_PASSWORD", "postgres")
-        host = os.getenv("POSTGRES_HOST", "localhost")
-        port = os.getenv("POSTGRES_PORT", "5432")
-        db = os.getenv("POSTGRES_DB", "cowriter")
+    @computed_field
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-        return cast(PostgresDsn, f"postgresql://{user}:{password}@{host}:{port}/{db}")
+    @computed_field
+    @property
+    def ASYNC_DATABASE_URL(self) -> str:
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-    @validator("ASYNC_DATABASE_URL", pre=True, always=True)
-    def set_async_database_url(cls, v: Any, values: Dict[str, Any]) -> Optional[PostgresDsn]:
-        """Set async database URL based on DATABASE_URL."""
-        if v:
-            return cast(PostgresDsn, v)
-
-        db_url = values.get("DATABASE_URL")
-        if not db_url:
-            return None
-
-        # Convert postgresql:// to postgresql+asyncpg://
-        if isinstance(db_url, str):
-            return cast(PostgresDsn, db_url.replace("postgresql://", "postgresql+asyncpg://"))
-
-        # This should not be reached as DATABASE_URL should be a string
-        return None
+    model_config = SettingsConfigDict(case_sensitive=True, env_file=".env", extra="allow")
 
 
 # Create a singleton instance

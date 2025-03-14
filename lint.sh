@@ -91,6 +91,10 @@ backend_black_status=$?
 run_command "poetry run isort ." "isort import sorting"
 backend_isort_status=$?
 
+# Remove unused imports using autoflake
+run_command "poetry run autoflake --remove-all-unused-imports --recursive --in-place ." "autoflake (remove unused imports)"
+backend_autoflake_status=$?
+
 # Run flake8 (cannot auto-fix)
 run_command "poetry run flake8" "flake8 linting"
 backend_flake8_status=$?

@@ -1,6 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_db_dependency, get_optional_current_user
 from app.models.llm import LLMConnectionRequest, LLMConnectionResponse, LLMType
+from app.models.user import User
 from app.services.llm_manager import llm_manager
 
 router = APIRouter()
@@ -33,7 +36,11 @@ def _handle_llama_connection(host: str, port: str) -> LLMConnectionResponse:
 
 
 @router.post("/connect_llm", response_model=LLMConnectionResponse)
-async def connect_llm(request: LLMConnectionRequest) -> LLMConnectionResponse:
+async def connect_llm(
+    request: LLMConnectionRequest,
+    db: AsyncSession = Depends(get_db_dependency),
+    current_user: User = Depends(get_optional_current_user),
+) -> LLMConnectionResponse:
     """Test connection to the specified LLM provider and store the connection."""
     try:
         # Disconnect existing connection if any

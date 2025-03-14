@@ -2,7 +2,7 @@
 Database connection and session management.
 """
 
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import contextmanager
 from typing import AsyncGenerator, Generator, cast
 
 from sqlalchemy import create_engine
@@ -60,7 +60,6 @@ def AsyncSessionLocal() -> AsyncSession:
 Base = declarative_base()
 
 
-@asynccontextmanager
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Get async database session.
@@ -73,6 +72,10 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
     finally:
         await session.close()
+
+
+# Alias for get_db for backward compatibility
+get_async_db = get_db
 
 
 @contextmanager

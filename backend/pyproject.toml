@@ -21,6 +21,10 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.9"
 email-validator = "^2.1.1"
 asyncpg = "^0.29.0"
+pydantic-settings = "^2.8.1"
+aiosqlite = "^0.21.0"
+greenlet = "^3.1.1"
+pytest-asyncio = "^0.25.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
@@ -32,6 +36,9 @@ flake8-docstrings = "^1.7.0"
 flake8-bugbear = "^24.2.6"
 types-requests = "^2.32.0.20241016"
 pytest-asyncio = "^0.25.3"
+autoflake = "^2.3.1"
+types-python-jose = "^3.4.0.20250224"
+types-passlib = "^1.7.7.20241221"
 
 [tool.black]
 line-length = 100

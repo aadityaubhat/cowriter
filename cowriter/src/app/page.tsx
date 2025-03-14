@@ -6,8 +6,14 @@ import { ConfigureTab } from '@/components/layout/ConfigureTab';
 import { useCoWriterState } from '@/hooks/useCoWriterState';
 import { useEffect } from 'react';
 import { ALL_DOCUMENT_TYPES } from '@/utils/constants';
+import { useAuth } from '@/lib/auth-context';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
+
+  // Move the useCoWriterState hook outside of conditional rendering
   const {
     // State
     activeTab,
@@ -48,6 +54,12 @@ export default function Home() {
     handleTabChange,
     handleDialogOpenChange,
   } = useCoWriterState();
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   // Initialize document types when the app starts
   useEffect(() => {
@@ -101,6 +113,11 @@ export default function Home() {
       }
     }
   }, []);
+
+  // If still loading auth or not authenticated, don't render the main content
+  if (authLoading || !isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

@@ -12,14 +12,9 @@ This is the backend service for the CoWriter application, built with FastAPI and
 
 ## Running the Server
 
-1. Activate the poetry shell:
+1. Run the server
    ```bash
-   poetry shell
-   ```
-
-2. Run the server:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
+   poetry run uvicorn app.main:app --reload --port 8000
    ```
 
 The server will be available at `http://localhost:8000`

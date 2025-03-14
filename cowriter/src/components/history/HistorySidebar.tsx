@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Plus, X as XIcon, ChevronLeft, ChevronRight, Trash2, Edit, Check } from 'lucide-react';
 import { HistoryItem, DocumentType } from '@/types';
 import { getDocumentTypeIcon } from '@/utils/documentIcons';
-import { ALL_DOCUMENT_TYPES } from '@/utils/constants';
 
 interface HistorySidebarProps {
   history: HistoryItem[];
@@ -32,9 +31,6 @@ export function HistorySidebar({
   const [editingTitle, setEditingTitle] = useState('');
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  // State to store available document types from configuration - initialize with empty array
-  const [availableDocTypes, setAvailableDocTypes] = useState<DocumentType[]>([]);
-
   // Load available document types from localStorage
   useEffect(() => {
     console.log('HistorySidebar: Loading document types from storage');
@@ -45,29 +41,21 @@ export function HistorySidebar({
         const parsedTypes = JSON.parse(savedDocTypes) as DocumentType[];
         console.log('HistorySidebar: Parsed document types:', parsedTypes);
         if (parsedTypes.length > 0) {
-          setAvailableDocTypes(parsedTypes);
           console.log('HistorySidebar: Set available document types to:', parsedTypes);
         } else {
-          // If empty array, set default to all document types
-          setAvailableDocTypes(ALL_DOCUMENT_TYPES);
           console.log('HistorySidebar: Empty array, set to ALL_DOCUMENT_TYPES');
         }
       } catch (error) {
         console.error('HistorySidebar: Error parsing saved document types:', error);
-        // If error, set default to all document types
-        setAvailableDocTypes(ALL_DOCUMENT_TYPES);
         console.log('HistorySidebar: Error parsing, set to ALL_DOCUMENT_TYPES');
       }
     } else {
-      // If no saved types, set default to all document types
-      setAvailableDocTypes(ALL_DOCUMENT_TYPES);
       console.log('HistorySidebar: No saved types, set to ALL_DOCUMENT_TYPES');
     }
 
     // Add event listener for custom docTypesChanged event
     const handleDocTypesChanged = (e: CustomEvent) => {
       console.log('HistorySidebar: Received docTypesChanged event:', e.detail.types);
-      setAvailableDocTypes(e.detail.types);
     };
 
     window.addEventListener('docTypesChanged', handleDocTypesChanged as EventListener);
