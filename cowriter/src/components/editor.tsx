@@ -279,8 +279,7 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
     },
     editorProps: {
       attributes: {
-        class:
-          'prose prose-base max-w-none focus:outline-none w-full h-full overflow-y-auto px-4 py-2',
+        class: 'prose prose-base max-w-none focus:outline-none w-full px-4 py-2',
       },
     },
   });
@@ -300,7 +299,7 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
   }, [editor, content, updateWordCount]);
 
   return (
-    <div className="h-full">
+    <div className="flex h-full flex-col">
       {/* Regular editor container */}
       <div
         className={`flex h-full w-full flex-col rounded-lg border bg-background transition-all duration-500 ease-in-out ${
@@ -309,11 +308,11 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
       >
         <MenuBar editor={editor} isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode} />
         {!isFocusMode && (
-          <div className="relative flex min-h-0 flex-1 flex-col">
-            <div className="flex-1 overflow-auto p-4">
+          <div className="relative flex flex-1 flex-col">
+            <div className="h-[calc(100vh-180px)]">
               <EditorContent
                 editor={editor}
-                className="prose h-full max-w-none focus:outline-none"
+                className="prose h-full max-w-none overflow-auto p-4 focus:outline-none"
               />
             </div>
             <div className="border-t bg-muted/10 px-4 py-2 text-right text-sm text-muted-foreground">
@@ -341,11 +340,11 @@ export function Editor({ content, onUpdate, isLoading = false }: EditorProps) {
       >
         <MenuBar editor={editor} isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode} />
         {isFocusMode && (
-          <div className="relative flex min-h-0 flex-1 flex-col">
-            <div className="flex-1 overflow-auto p-6">
+          <div className="relative flex flex-1 flex-col">
+            <div className="h-[calc(90vh-120px)]">
               <EditorContent
                 editor={editor}
-                className="prose prose-lg h-full max-w-none focus:outline-none"
+                className="prose prose-lg h-full max-w-none overflow-auto p-6 focus:outline-none"
               />
             </div>
             <div className="border-t bg-muted/10 px-6 py-3 text-right text-sm text-muted-foreground">

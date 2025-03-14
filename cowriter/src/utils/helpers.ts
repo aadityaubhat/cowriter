@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { HistoryItem, ActionButton, EvalItem, LLMConfig, DocumentType } from '@/types';
+import { HistoryItem, ActionButton, EvalItem, DocumentType } from '@/types';
 import { DEFAULT_ACTIONS, DEFAULT_EVALS, ALL_DOCUMENT_TYPES } from './constants';
 
 // Helper to check if localStorage is available

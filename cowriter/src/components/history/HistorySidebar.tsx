@@ -26,7 +26,6 @@ export function HistorySidebar({
   onNewDocument,
   onDeleteDocument,
   onRenameDocument,
-  onUpdateDocumentType,
   onToggleHistory,
 }: HistorySidebarProps) {
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
