@@ -2,9 +2,10 @@
 Test fixtures for the CoWriter backend.
 """
 
+import asyncio
+
 import pytest
 from fastapi.testclient import TestClient
-import asyncio
 
 from app.main import app
 from app.services.llm_manager import llm_manager

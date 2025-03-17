@@ -138,7 +138,16 @@ async def register_user(
         # Create user
         user = await create_user(db, user_data.email, user_data.password)
         logger.info(f"User registered successfully: {user_data.email}")
-        return user
+
+        # Convert UUID to string for response
+        user_dict = {
+            "id": str(user.id),
+            "username": user.username,
+            "email": user.email,
+            "is_active": user.is_active,
+            "is_verified": user.is_verified,
+        }
+        return user_dict
     except Exception as e:
         logger.error(f"Error during user registration: {e}")
         raise HTTPException(
@@ -161,4 +170,13 @@ async def get_current_user(
         Current user.
     """
     logger.debug(f"Retrieving current user info for user ID: {current_user.id}")
-    return current_user
+
+    # Convert UUID to string for response
+    user_dict = {
+        "id": str(current_user.id),
+        "username": current_user.username,
+        "email": current_user.email,
+        "is_active": current_user.is_active,
+        "is_verified": current_user.is_verified,
+    }
+    return user_dict

@@ -31,11 +31,8 @@ async def get_session() -> AsyncSession:
     Returns:
         AsyncSession: Database session
     """
-    session = AsyncSessionLocal()
-    try:
+    async with AsyncSessionLocal() as session:
         yield session
-    finally:
-        await session.close()
 
 
 # Create module-level variables for dependency functions

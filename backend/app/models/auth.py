@@ -38,7 +38,7 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     """User response schema."""
 
-    id: uuid.UUID
+    id: str
     username: str
     email: str
     is_active: bool
@@ -49,6 +49,9 @@ class UserResponse(BaseModel):
 
         orm_mode = True
         from_attributes = True
+
+        # Add JSON schema extra to handle UUID conversion
+        json_encoders = {uuid.UUID: lambda v: str(v)}
 
 
 class PasswordReset(BaseModel):

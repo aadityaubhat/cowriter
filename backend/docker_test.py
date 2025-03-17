@@ -104,8 +104,7 @@ async def test_correct_session_usage():
     logger.info("Testing correct session usage (as in FastAPI endpoints)...")
     try:
         # This is how FastAPI's dependency injection system uses the generator
-        db_gen = get_db()
-        async with db_gen as db:
+        async for db in get_db():
             # Test a simple query
             result = await db.execute(text("SELECT 1"))
             value = result.scalar()

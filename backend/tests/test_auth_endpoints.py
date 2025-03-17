@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from app.core.config import settings
 from app.db.database import get_db
 from app.main import app
-from tests.test_database import get_test_db, init_test_db, drop_test_db
+from tests.test_database import drop_test_db, get_test_db, init_test_db
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
